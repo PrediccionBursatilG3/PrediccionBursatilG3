@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPBI — Acceso al Sistema</title>
+<style>
+  /* ═══════════════════════════════════════════════
+     SPBI · Sistema de Predicción Bursátil Inteligente
+     Módulo: Autenticación de Usuario
+     Basado en: ERS Semana 8 · Grupo 10 · UNMSM 2026-II
+  ═══════════════════════════════════════════════ */
+  :root {
+    --azul:       #1F3864;
+    --azul-mid:   #2E5FAC;
+    --dorado:     #C5961A;
+    --dorado-lt:  #F0C93A;
+    --blanco:     #FFFFFF;
+    --rojo:       #DC3545;
+    --verde:      #198754;
+    --gris-bg:    #F0F4FA;
+    --gris-borde: #D0D8EA;
+    --gris-text:  #6B7A99;
+    --negro:      #111827;
+    --sombra-lg:  0 20px 60px rgba(31,56,100,.18);
+    --sombra-sm:  0 4px 16px rgba(31,56,100,.10);
+    --radio:      14px;
+    --trans:      .3s cubic-bezier(.4,0,.2,1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--gris-bg);
+    color: var(--negro);
+  }
+
+  /* ── Panel izquierdo: branding ── */
+  .panel-left {
+    background: linear-gradient(160deg, #0d1e3d 0%, var(--azul) 50%, #1a3a7a 100%);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 60px 56px;
+    position: relative; overflow: hidden;
+  }
+
+  /* Decoración geométrica de fondo */
+  .panel-left::before {
+    content: '';
+    position: absolute; top: -80px; right: -80px;
+    width: 380px; height: 380px;
+    border: 2px solid rgba(197,150,26,.15);
+    border-radius: 50%;
+  }
+  .panel-left::after {
+    content: '';
+    position: absolute; bottom: -60px; left: -60px;
+    width: 280px; height: 280px;
+    border: 2px solid rgba(255,255,255,.06);
+    border-radius: 50%;
+  }
+
+  .brand-logo {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 52px; z-index: 1;
+  }
+  .brand-icon {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--dorado), var(--dorado-lt));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; box-shadow: 0 6px 20px rgba(197,150,26,.4);
+  }
+  .brand-text { color: var(--blanco); }
+  .brand-text .sigla { font-size: 22px; font-weight: 800; letter-spacing: 3px; }
+  .brand-text .nombre { font-size: 11px; color: rgba(255,255,255,.55); letter-spacing: .5px; margin-top: 1px; }
+
+  .hero-titulo {
+    font-size: 38px; font-weight: 800; color: var(--blanco);
+    line-height: 1.15; margin-bottom: 20px; z-index: 1;
+    max-width: 380px;
+  }
+  .hero-titulo span { color: var(--dorado-lt); }
+
+  .hero-desc {
+    font-size: 14.5px; color: rgba(255,255,255,.6);
+    line-height: 1.7; max-width: 360px; z-index: 1;
+    margin-bottom: 44px;
+  }
+
+  /* Módulos list */
+  .modulos-list { z-index: 1; display: flex; flex-direction: column; gap: 10px; }
+  .modulo-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: rgba(255,255,255,.75);
+  }
+  .modulo-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--dorado); flex-shrink: 0;
+  }
+
+  /* Barra dorada inferior izq */
+  .left-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--dorado), var(--dorado-lt), transparent);
+  }
+
+  /* ── Panel derecho: formularios ── */
+  .panel-right {
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 48px 56px;
+    background: var(--blanco);
+    position: relative;
+  }
+
+  .form-container { width: 100%; max-width: 400px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; border-bottom: 2px solid var(--gris-bg);
+    margin-bottom: 32px; gap: 2px;
+  }
+  .tab-btn {
+    flex: 1; background: none; border: none;
+    padding: 11px 6px 13px;
+    font-size: 13.5px; font-weight: 600;
+    color: var(--gris-text); cursor: pointer;
+    position: relative; transition: color var(--trans);
+    font-family: inherit;
+  }
+  .tab-btn.active { color: var(--azul); }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute; bottom: -2px; left: 0; right: 0;
+    height: 2px; background: var(--dorado); border-radius: 2px 2px 0 0;
+  }
+
+  /* Pantallas */
+  .screen { display: none; animation: fadeIn .25s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Título de sección */
+  .form-title { font-size: 22px; font-weight: 800; color: var(--azul); margin-bottom: 6px; }
+  .form-sub   { font-size: 13px; color: var(--gris-text); margin-bottom: 28px; }
+
+  /* Campos */
+  .field { margin-bottom: 18px; }
+  label {
+    display: block; font-size: 12px; font-weight: 700;
+    color: var(--azul); margin-bottom: 7px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .input-wrap { position: relative; }
+  .input-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    font-size: 15px; pointer-events: none; opacity: .5;
+  }
+  input[type=text], input[type=email], input[type=password], select {
+    width: 100%; padding: 11px 14px 11px 38px;
+    border: 1.5px solid var(--gris-borde); border-radius: var(--radio);
+    font-size: 14px; color: var(--negro);
+    background: var(--gris-bg); font-family: inherit;
+    transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--azul); background: var(--blanco);
+    box-shadow: 0 0 0 3px rgba(31,56,100,.08);
+  }
+  input.error { border-color: var(--rojo); }
+  .err-msg { font-size: 11.5px; color: var(--rojo); margin-top: 5px; display: none; }
+  .err-msg.show { display: block; }
+
+  /* Perfil de inversor */
+  .perfil-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .perfil-card {
+    border: 1.5px solid var(--gris-borde); border-radius: 10px;
+    padding: 12px 8px; text-align: center; cursor: pointer;
+    transition: all var(--trans); background: var(--gris-bg);
+  }
+  .perfil-card:hover { border-color: var(--azul-mid); background: #EBF3FB; }
+  .perfil-card.sel { border-color: var(--azul); background: #EBF3FB; box-shadow: 0 0 0 2px rgba(31,56,100,.12); }
+  .perfil-card .ico { font-size: 22px; margin-bottom: 5px; }
+  .perfil-card .lbl { font-size: 10.5px; font-weight: 700; color: var(--azul); text-transform: uppercase; letter-spacing: .4px; }
+  .perfil-card .desc{ font-size: 10px; color: var(--gris-text); margin-top: 2px; }
+
+  /* Checkbox */
+  .chk-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 22px; margin-top: 2px;
+  }
+  .chk-row input[type=checkbox] { width: 15px; height: 15px; margin-top: 2px; accent-color: var(--azul); }
+  .chk-row span { font-size: 12.5px; color: #555; line-height: 1.5; }
+  .chk-row a { color: var(--azul); font-weight: 600; text-decoration: none; }
+  .chk-row a:hover { text-decoration: underline; }
+
+  /* Botón principal */
+  .btn-main {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--azul) 0%, #2a4f9e 100%);
+    color: var(--blanco); border: none; border-radius: var(--radio);
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: inherit; letter-spacing: .3px;
+    box-shadow: 0 6px 20px rgba(31,56,100,.30);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(31,56,100,.40); }
+  .btn-main:active { transform: translateY(0); }
+
+  /* Botón Google */
+  .btn-google {
+    width: 100%; padding: 11px;
+    background: var(--blanco); color: #444;
+    border: 1.5px solid var(--gris-borde); border-radius: var(--radio);
+    font-size: 13.5px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 10px; font-family: inherit;
+    transition: background var(--trans), border-color var(--trans);
+  }
+  .btn-google:hover { background: var(--gris-bg); border-color: #b0b8cc; }
+
+  /* Divisor */
+  .divider {
+    text-align: center; font-size: 12px; color: var(--gris-text);
+    margin: 14px 0; position: relative;
+  }
+  .divider::before, .divider::after {
+    content: ''; position: absolute;
+    top: 50%; width: 40%; height: 1px; background: var(--gris-borde);
+  }
+  .divider::before { left: 0; }
+  .divider::after  { right: 0; }
+
+  /* Links */
+  .link-row { text-align: center; margin-top: 16px; font-size: 12.5px; color: var(--gris-text); }
+  .link-row a { color: var(--azul); font-weight: 600; text-decoration: none; cursor: pointer; }
+  .link-row a:hover { text-decoration: underline; }
+
+  /* Alerta de éxito */
+  .alert-ok {
+    background: #D4EDDA; border: 1px solid #C3E6CB;
+    border-radius: 10px; padding: 16px 18px;
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 20px; display: none;
+  }
+  .alert-ok.show { display: flex; }
+  .alert-ok .ico { font-size: 20px; }
+  .alert-ok p { font-size: 13px; color: #155724; line-height: 1.5; }
+
+  /* Footer */
+  .form-footer {
+    position: absolute; bottom: 20px;
+    font-size: 11px; color: var(--gris-text); text-align: center;
+  }
+
+  /* ══════════════════════════════
+     RESPONSIVE — VERSIÓN MÓVIL
+     Breakpoints: tablet 900px / móvil 480px
+  ══════════════════════════════ */
+
+  /* ── Tablet y abajo ── */
+  @media (max-width: 900px) {
+    body { grid-template-columns: 1fr; }
+    .panel-left { display: none; }
+    .panel-right { padding: 40px 32px; min-height: 100vh; }
+    .form-container { max-width: 460px; }
+  }
+
+  /* ── Móvil (375px — iPhone SE / estándar) ── */
+  @media (max-width: 480px) {
+    .panel-right { padding: 28px 20px 60px; }
+    .form-container { max-width: 100%; }
+
+    /* Tabs más compactos */
+    .tabs { gap: 0; margin-bottom: 24px; }
+    .tab-btn { font-size: 12px; padding: 9px 4px 11px; }
+
+    /* Campos táctiles — altura mínima recomendada 44px */
+    input[type=text],
+    input[type=email],
+    input[type=password],
+    select {
+      padding: 13px 14px 13px 40px;
+      font-size: 16px; /* evita zoom automático en iOS */
+      border-radius: 10px;
+    }
+
+    /* Botones táctiles */
+    .btn-main {
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 12px;
+    }
+    .btn-google {
+      padding: 13px;
+      font-size: 14px;
+      border-radius: 12px;
+    }
+
+    /* Perfil de inversor — más alto en móvil */
+    .perfil-grid { gap: 6px; }
+    .perfil-card { padding: 14px 6px; }
+    .perfil-card .ico { font-size: 26px; }
+    .perfil-card .lbl { font-size: 11px; }
+
+    /* Título */
+    .form-title { font-size: 20px; }
+    .form-sub   { font-size: 13px; margin-bottom: 22px; }
+
+    /* Footer fijo abajo en móvil */
+    .form-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--gris-bg);
+      padding: 10px 16px;
+      border-top: 1px solid var(--gris-borde);
+      font-size: 10.5px;
+    }
+
+    /* Mini header de marca visible en móvil (reemplaza panel izquierdo) */
+    .panel-right::before {
+      content: '📈 SPBI';
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--azul);
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ PANEL IZQUIERDO ══ -->
+<div class="panel-left">
+  <div class="brand-logo">
+    <div class="brand-icon">📈</div>
+    <div class="brand-text">
+      <div class="sigla">SPBI</div>
+      <div class="nombre">Sistema de Predicción Bursátil Inteligente</div>
+    </div>
+  </div>
+
+  <h1 class="hero-titulo">
+    Decisiones de inversión<br>respaldadas por <span>Inteligencia Artificial</span>
+  </h1>
+  <p class="hero-desc">
+    Plataforma de análisis financiero con 16 modelos predictivos de IA para acciones y criptomonedas.
+    Datos en tiempo real de Interactive Brokers, Yahoo Finance y CoinMarketCap.
+  </p>
+
+  <div class="modulos-list">
+    <div class="modulo-item"><div class="modulo-dot"></div>SVC · LSTM · BiLSTM · XGBoost · GRU · Random Forest</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>NLP VADER · LLM (OpenAI) · ARIMA-LSTM · Ensamblados</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>Backtesting con VectorBT · Opciones Financieras</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>Ejecución de órdenes vía Interactive Brokers API</div>
+  </div>
+
+  <div class="left-bar"></div>
+</div>
+
+<!-- ══ PANEL DERECHO ══ -->
+<div class="panel-right">
+  <div class="form-container">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showScreen('login',this)">Iniciar Sesión</button>
+      <button class="tab-btn" onclick="showScreen('registro',this)">Registrarse</button>
+      <button class="tab-btn" onclick="showScreen('recuperar',this)">Recuperar Acceso</button>
+    </div>
+
+    <!-- ══ PANTALLA 1: LOGIN ══ -->
+    <div id="s-login" class="screen active">
+      <div class="form-title">Bienvenido</div>
+      <div class="form-sub">Ingresa tus credenciales para acceder al sistema.</div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="email" id="l-email" placeholder="usuario@ejemplo.com">
+        </div>
+        <div class="err-msg" id="e-l-email">Ingresa un correo electrónico válido.</div>
+      </div>
+
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="l-pass" placeholder="••••••••">
+        </div>
+        <div class="err-msg" id="e-l-pass">La contraseña es obligatoria.</div>
+      </div>
+
+      <button class="btn-main" onclick="doLogin()">Iniciar Sesión</button>
+      <div class="divider">o continúa con</div>
+      <button class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.2 33.5 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.1-6.1C34.7 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11 0 20.5-8 20.5-21 0-1.4-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.2 16 19.3 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.1-6.1C34.7 5.1 29.6 3 24 3 16.1 3 9.2 7.9 6.3 14.7z"/><path fill="#FBBC05" d="M24 45c5.5 0 10.5-1.9 14.4-5l-6.7-5.5C29.7 36.2 27 37 24 37c-5.7 0-10.2-3.5-11.7-8.5l-7 5.4C8.9 40.7 16 45 24 45z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.8 2.3-2.3 4.3-4.3 5.9l6.7 5.5c3.9-3.6 6.4-8.9 6.4-15.4 0-1.4-.2-2.7-.5-4z"/></svg>
+        Continuar con Google
+      </button>
+      <div class="link-row">
+        <a onclick="showScreen('recuperar', document.querySelectorAll('.tab-btn')[2])">¿Olvidaste tu contraseña?</a>
+        &nbsp;·&nbsp;
+        <a onclick="showScreen('registro', document.querySelectorAll('.tab-btn')[1])">Crear cuenta</a>
+      </div>
+    </div>
+
+    <!-- ══ PANTALLA 2: REGISTRO ══ -->
+    <div id="s-registro" class="screen">
+      <div class="form-title">Crear Cuenta</div>
+      <div class="form-sub">Completa el formulario para acceder al sistema SPBI.</div>
+
+      <div class="field">
+        <label>Nombre completo</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="r-nombre" placeholder="Juan Pérez García">
+        </div>
+        <div class="err-msg" id="e-r-nombre">Ingresa tu nombre completo.</div>
+      </div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="email" id="r-email" placeholder="usuario@ejemplo.com">
+        </div>
+        <div class="err-msg" id="e-r-email">Ingresa un correo válido.</div>
+      </div>
+
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="r-pass" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="err-msg" id="e-r-pass">Mínimo 8 caracteres.</div>
+      </div>
+
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="r-pass2" placeholder="Repite tu contraseña">
+        </div>
+        <div class="err-msg" id="e-r-pass2">Las contraseñas no coinciden.</div>
+      </div>
+
+      <div class="field">
+        <label>Perfil de inversor</label>
+        <div class="perfil-grid">
+          <div class="perfil-card" onclick="selPerfil(this)">
+            <div class="ico">🛡️</div>
+            <div class="lbl">Conservador</div>
+            <div class="desc">Bajo riesgo</div>
+          </div>
+          <div class="perfil-card sel" onclick="selPerfil(this)">
+            <div class="ico">⚖️</div>
+            <div class="lbl">Moderado</div>
+            <div class="desc">Riesgo medio</div>
+          </div>
+          <div class="perfil-card" onclick="selPerfil(this)">
+            <div class="ico">🚀</div>
+            <div class="lbl">Agresivo</div>
+            <div class="desc">Alto riesgo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chk-row">
+        <input type="checkbox" id="terminos">
+        <span>Acepto los <a href="#">Términos de Uso</a> y la <a href="#">Política de Privacidad</a> del sistema SPBI.</span>
+      </div>
+
+      <button class="btn-main" onclick="doRegistro()">Crear Cuenta</button>
+      <div class="link-row">
+        ¿Ya tienes cuenta? <a onclick="showScreen('login', document.querySelectorAll('.tab-btn')[0])">Inicia sesión aquí</a>
+      </div>
+    </div>
+
+    <!-- ══ PANTALLA 3: RECUPERAR ══ -->
+    <div id="s-recuperar" class="screen">
+      <div id="rec-form">
+        <div class="form-title">Recuperar Acceso</div>
+        <div class="form-sub">Ingresa tu correo y recibirás un enlace para restablecer tu contraseña.</div>
+
+        <div class="alert-ok" id="rec-ok">
+          <span class="ico">✅</span>
+          <p><strong>Enlace enviado correctamente.</strong><br>Revisa tu bandeja de entrada. El enlace expirará en 30 minutos.</p>
+        </div>
+
+        <div class="field" id="rec-field">
+          <label>Correo electrónico registrado</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input type="email" id="rec-email" placeholder="usuario@ejemplo.com">
+          </div>
+          <div class="err-msg" id="e-rec">Ingresa un correo válido.</div>
+        </div>
+
+        <button class="btn-main" id="rec-btn" onclick="doRecuperar()">Enviar Enlace de Recuperación</button>
+        <div class="link-row">
+          <a onclick="showScreen('login', document.querySelectorAll('.tab-btn')[0])">Volver al inicio de sesión</a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /form-container -->
+
+  <div class="form-footer">
+    SPBI · Sistema de Predicción Bursátil Inteligente · UNMSM · Grupo 10 · iDeSo 2026-II
+  </div>
+</div><!-- /panel-right -->
+
+<script>
+  /* ── Navegación ── */
+  function showScreen(id, btn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('s-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    // Reset recuperar
+    if (id === 'recuperar') {
+      document.getElementById('rec-ok').classList.remove('show');
+      document.getElementById('rec-field').style.display = '';
+      document.getElementById('rec-btn').style.display = '';
+    }
+  }
+
+  /* ── Perfil ── */
+  function selPerfil(el) {
+    document.querySelectorAll('.perfil-card').forEach(c => c.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+
+  /* ── Helpers ── */
+  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function setErr(inputId, errId, show) {
+    document.getElementById(inputId).classList.toggle('error', show);
+    document.getElementById(errId).classList.toggle('show', show);
+    return show;
+  }
+
+  /* ── Login ── */
+  function doLogin() {
+    const email = document.getElementById('l-email').value.trim();
+    const pass  = document.getElementById('l-pass').value;
+    let ok = true;
+    if (!emailReg.test(email)) { setErr('l-email','e-l-email',true); ok=false; } else setErr('l-email','e-l-email',false);
+    if (!pass)                  { setErr('l-pass','e-l-pass',true);  ok=false; } else setErr('l-pass','e-l-pass',false);
+    if (ok) alert('✅ Credenciales válidas.\nRedirigiendo al Dashboard SPBI...');
+  }
+
+  /* ── Registro ── */
+  function doRegistro() {
+    const nombre = document.getElementById('r-nombre').value.trim();
+    const email  = document.getElementById('r-email').value.trim();
+    const pass   = document.getElementById('r-pass').value;
+    const pass2  = document.getElementById('r-pass2').value;
+    const chk    = document.getElementById('terminos').checked;
+    let ok = true;
+    if (!nombre)                 { setErr('r-nombre','e-r-nombre',true); ok=false; } else setErr('r-nombre','e-r-nombre',false);
+    if (!emailReg.test(email))   { setErr('r-email','e-r-email',true);  ok=false; } else setErr('r-email','e-r-email',false);
+    if (pass.length < 8)         { setErr('r-pass','e-r-pass',true);    ok=false; } else setErr('r-pass','e-r-pass',false);
+    if (pass !== pass2)          { setErr('r-pass2','e-r-pass2',true);  ok=false; } else setErr('r-pass2','e-r-pass2',false);
+    if (!chk) { alert('Debes aceptar los Términos de Uso para continuar.'); ok=false; }
+    if (ok) alert('✅ Cuenta creada correctamente.\nSe enviará un email de verificación.');
+  }
+
+  /* ── Recuperar ── */
+  function doRecuperar() {
+    const email = document.getElementById('rec-email').value.trim();
+    if (!emailReg.test(email)) { setErr('rec-email','e-rec',true); return; }
+    setErr('rec-email','e-rec',false);
+    document.getElementById('rec-field').style.display = 'none';
+    document.getElementById('rec-btn').style.display   = 'none';
+    document.getElementById('rec-ok').classList.add('show');
+  }
+</script>
+</body>
+</html>

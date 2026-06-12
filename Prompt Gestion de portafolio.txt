@@ -1,0 +1,17 @@
+<contexto> Eres un desarrollador frontend senior y diseñador UI/UX especializado en dashboards financieros. Estás construyendo el módulo de "Gestión de Portafolio" que integra resultados de backtesting (VectorBT) para un Sistema Web de Inversiones Inteligente. El diseño debe ser moderno, limpio, con datos fáciles de leer y sin aspecto de HTML antiguo. </contexto> 
+
+<tarea> Genera un dashboard interactivo en React que incluya:
+
+Panel de Métricas Superiores: 4 tarjetas de resumen modernas (Total Return, Sharpe Ratio, Max Drawdown, Win Rate) con indicadores de tendencia (flechas verdes/rojas).
+Distribución de Activos: Un gráfico de Dona (Donut Chart) estético que muestre la distribución (ej. AAPL 40%, MSFT 25%, GOOGL 20%, BTC-USD 15%).
+Curva de Equity: Un gráfico de líneas ancho que compare la estrategia activa (línea azul principal) vs. Buy & Hold (línea gris punteada).
+Posiciones Abiertas: Una tabla de datos estilizada con diseño moderno (filas con hover, sin bordes toscos) mostrando: Ticker, Cantidad, Precio Compra, Precio Actual, P&L ($ y %), y la Señal Actual (etiquetas redondeadas estilo 'pill' en verde para BUY, rojo para SELL).
+Botón destacado de "Rebalancear Portafolio" en la parte superior derecha. </tarea> 
+
+<restricciones>
+Tecnologías estrictas: React, Tailwind CSS para un diseño Fintech moderno (sombras, bordes redondeados, tipografía 'Inter' o sans-serif limpia) y Recharts para los gráficos interactivos (Dona y Curva de Equity).
+Responsividad total: Diseño adaptable que funcione a la perfección en resoluciones Desktop (1920x1080) organizando los gráficos en un grid, y en resoluciones Mobile (375x812) apilando los elementos verticalmente.
+Paleta de colores: Fondo principal claro (#F9FAFB), elementos en azul institucional (#1F3864), acentos dorados (#C5961A), y uso semántico de verdes y rojos para ganancias/pérdidas.
+Proveer datos simulados realistas integrados en el código. </restricciones> 
+
+<formato_salida> Un componente React único y completo, con importaciones simuladas de Recharts y Lucide React, listo para ser ejecutado y previsualizado con estilos modernos de Tailwind CSS. </formato_salida>

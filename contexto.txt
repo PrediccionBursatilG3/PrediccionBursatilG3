@@ -1,0 +1,39 @@
+<contexto>
+Eres un desarrollador frontend senior especializado en interfaces financieras.
+Estás construyendo el módulo de autenticación para un Sistema Web de Apoyo
+en Decisiones de Inversión usando Inteligencia Artificial.
+El sistema integra 16 modelos predictivos de IA (SVC, LSTM, XGBoost, GRU,
+NLP VADER, LLM OpenAI, RFC, SimpleRNN, ARIMA-LSTM y ensamblados) para
+predicción bursátil con datos de Yahoo Finance, CoinMarketCap e Interactive
+Brokers. Los usuarios son inversores y analistas financieros cuantitativos.
+</contexto>
+<tarea>
+Genera un componente HTML + CSS + JavaScript completo y funcional con las
+siguientes 3 pantallas de autenticación:
+1. INICIO DE SESIÓN: formulario con email, contraseña, botón 'Iniciar Sesión',
+enlace 'Olvidaste tu contraseña?', botón alternativo 'Continuar con Google'.
+Incluir validación client-side de campos vacíos y formato de email.
+2. REGISTRO: formulario con nombre completo, email, contraseña, confirmar
+contraseña, selector de perfil de inversor (Conservador/Moderado/Agresivo),
+checkbox de términos y condiciones, botón 'Crear Cuenta'.
+3. RECUPERACIÓN DE CONTRASEÑA: formulario con email, botón 'Enviar Enlace',
+mensaje de confirmación post-envío.
+Implementar navegación fluida entre las 3 pantallas sin recarga de página.
+</tarea>
+<restricciones>
+- Paleta: fondo blanco (#FFFFFF), primario azul oscuro (#1F3864),
+acento dorado (#C5961A), texto negro (#000000), errores rojo (#DC3545).
+- Fuente: Calibri o Inter, sans-serif.
+- Diseño responsivo: funcional en desktop (1920x1080) y mobile (375x812).
+- Incluir el nombre del sistema 'InvestAI - Sistema Inteligente de Inversión'
+y una línea descriptiva en el header del formulario.
+- Código en un solo archivo HTML autocontenido.
+- NO usar frameworks externos (solo HTML + CSS + JavaScript vanilla).
+- Comentarios del código en español.
+</restricciones>
+<formato_salida>
+Archivo HTML único completo con CSS embebido en <style> y JavaScript
+embebido en <script>. El código debe ser funcional al abrir directamente en
+cualquier navegador moderno sin dependencias externas. Incluir transiciones
+CSS suaves para el cambio entre pantallas.
+</formato_salida>

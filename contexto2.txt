@@ -1,0 +1,33 @@
+<contexto>
+Dashboard principal del Sistema de Prediccion Bursatil Inteligente.
+Integra visualizaciones de todos los modulos: datos de mercado (Candlestick),
+predicciones del Core de IA (12-16 modelos), senales de trading, metricas
+de backtesting (VectorBT), y estrategias de opciones. Construido con Plotly.
+</contexto>
+<tarea>
+Genera un dashboard HTML con Plotly.js y CSS Grid que integre en una sola
+pagina los siguientes paneles (layout tipo grid 12 columnas):
+1. PANEL SUPERIOR (8 columnas): Grafico Candlestick con predicciones LSTM
+superpuestas y marcadores BUY/SELL triangulares.
+2. PANEL LATERAL DERECHO (4 columnas): Checkboxes de modelos activos,
+semaforo de senal consolidada (BUY/SELL/HOLD), tabla de metricas por
+modelo (Accuracy/RMSE en tiempo real con colores verde/rojo).
+3. PANEL INFERIOR (12 columnas): Curva de equity del backtesting, tabla
+de metricas del portafolio (Sharpe, Sortino, Drawdown, Win Rate),
+histograma de retornos de trades.
+4. BARRA DE NAVEGACION: Logo 'InvestAI', selector de ticker, selector de
+periodo, boton 'Ejecutar Analisis', indicador de conexion al broker.
+</tarea>
+<restricciones>
+- Plotly.js via CDN. Datos simulados realistas para AAPL.
+- Layout responsivo con CSS Grid / Flexbox.
+- Paleta: fondo blanco, titulos #1F3864, acentos #C5961A y #800000.
+- HTML unico autocontenido (todo en un solo archivo).
+- Comentarios en espanol.
+- Incluir template='plotly_white' para los graficos de Plotly.
+</restricciones>
+<formato_salida>
+Archivo HTML completo con dashboard multi-panel interactivo, minimo 4
+graficos visibles simultaneamente, datos simulados realistas, y todos
+los elementos responsive para desktop y mobile.
+</formato_salida>

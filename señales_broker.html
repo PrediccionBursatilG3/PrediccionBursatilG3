@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IB Order Execution — Trading Desk</title>
+  <style>
+    /* =====================================================
+       TOKENS DE DISEÑO — paleta financiera profesional
+       ===================================================== */
+    :root {
+      --navy:        #0B1F3A;   /* fondo de header y modal overlay */
+      --blue:        #1A4A8A;   /* acento principal */
+      --blue-light:  #2563EB;   /* hover y focus */
+      --blue-muted:  #EBF2FF;   /* fondos de tarjeta secundaria */
+      --white:       #FFFFFF;
+      --gray-50:     #F8FAFC;
+      --gray-100:    #F1F4F8;
+      --gray-200:    #E2E8F0;
+      --gray-400:    #94A3B8;
+      --gray-600:    #475569;
+      --gray-800:    #1E293B;
+      --green:       #0F9D58;   /* Filled / conectado */
+      --amber:       #F59E0B;   /* Pending / modo papel */
+      --red:         #DC2626;   /* Cancelled / desconectado */
+      --red-light:   #FEF2F2;
+      --amber-light: #FFFBEB;
+      --green-light: #F0FDF4;
+
+      --radius:      6px;
+      --radius-lg:   10px;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:   0 4px 14px rgba(0,0,0,.10);
+      --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
+      --font-mono:   'JetBrains Mono', 'Fira Mono', 'Courier New', monospace;
+    }
+
+    /* =====================================================
+       RESET Y BASE
+       ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--gray-100);
+      color: var(--gray-800);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* =====================================================
+       HEADER — barra superior
+       ===================================================== */
+    .header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 28px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: .3px;
+    }
+    .header-brand svg { opacity: .85; }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .header-time {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--gray-400);
+      letter-spacing: .5px;
+    }
+
+    /* =====================================================
+       SEMÁFORO DE CONEXIÓN
+       ===================================================== */
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: default;
+      user-select: none;
+      transition: background .2s;
+    }
+    .conn-light {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.15);
+    }
+    /* Estados: data-status="connected" | "disconnected" | "paper" */
+    .conn-badge[data-status="connected"]    .conn-light { background: var(--green);  box-shadow: 0 0 6px #0F9D5888; }
+    .conn-badge[data-status="disconnected"] .conn-light { background: var(--red); }
+    .conn-badge[data-status="paper"]        .conn-light { background: var(--amber);  box-shadow: 0 0 6px #F59E0B88; }
+    .conn-badge[data-status="connected"]    .conn-label { color: #6EE7B7; }
+    .conn-badge[data-status="disconnected"] .conn-label { color: #FCA5A5; }
+    .conn-badge[data-status="paper"]        .conn-label { color: #FCD34D; }
+
+    /* =====================================================
+       ALERTA PAPER TRADING
+       ===================================================== */
+    .paper-alert {
+      display: none; /* se activa vía JS */
+      align-items: center;
+      gap: 10px;
+      background: var(--amber-light);
+      border-left: 4px solid var(--amber);
+      color: #92400E;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+    }
+    .paper-alert.visible { display: flex; }
+    .paper-alert svg { flex-shrink: 0; }
+
+    /* =====================================================
+       LAYOUT PRINCIPAL
+       ===================================================== */
+    .main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      grid-template-rows: auto auto;
+      gap: 20px;
+    }
+
+    /* =====================================================
+       CARD BASE
+       ===================================================== */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    .card-header {
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--navy);
+    }
+    .card-body { padding: 20px; }
+
+    /* =====================================================
+       FORMULARIO DE ORDEN
+       ===================================================== */
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form-row { display: flex; flex-direction: column; gap: 6px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--gray-600);
+    }
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      font-size: 14px;
+      color: var(--gray-800);
+      background: var(--white);
+      font-family: var(--font);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    select:focus, input:focus {
+      border-color: var(--blue-light);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    input:disabled {
+      background: var(--gray-100);
+      color: var(--gray-400);
+      cursor: not-allowed;
+    }
+
+    /* Chips de tipo de orden */
+    .order-type-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .order-type-btn {
+      padding: 8px 4px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      background: var(--white);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-600);
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .order-type-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-muted); }
+    .order-type-btn.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: var(--white);
+    }
+
+    /* =====================================================
+       PANEL DE VISTA PREVIA
+       ===================================================== */
+    .preview-card { grid-column: 2; grid-row: 1; }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--gray-200);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .preview-cell {
+      background: var(--gray-50);
+      padding: 14px 16px;
+    }
+    .preview-cell.full { grid-column: 1 / -1; }
+    .preview-cell.highlight { background: var(--blue-muted); }
+    .preview-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--gray-400);
+      margin-bottom: 4px;
+    }
+    .preview-value {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .preview-value.big {
+      font-size: 22px;
+      color: var(--blue);
+    }
+    .preview-value.dim { color: var(--gray-400); font-size: 13px; font-weight: 400; }
+
+    /* Botón Confirmar */
+    .btn-confirm {
+      margin-top: 18px;
+      width: 100%;
+      padding: 13px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background .15s, transform .1s;
+    }
+    .btn-confirm:hover  { background: #1450A0; }
+    .btn-confirm:active { transform: scale(.98); }
+    .btn-confirm:disabled {
+      background: var(--gray-200);
+      color: var(--gray-400);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* =====================================================
+       HISTORIAL DE ÓRDENES
+       ===================================================== */
+    .history-card {
+      grid-column: 1 / -1;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--gray-600);
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    tbody td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--gray-50); }
+    .td-mono { font-family: var(--font-mono); font-size: 12px; }
+    .td-ticker {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--navy);
+      font-family: var(--font-mono);
+    }
+
+    /* Badges de estado */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .badge-filled    { background: var(--green-light);  color: #065F46; }
+    .badge-pending   { background: var(--amber-light);  color: #92400E; }
+    .badge-cancelled { background: var(--red-light);    color: #991B1B; }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .badge-filled    .badge-dot { background: var(--green); }
+    .badge-pending   .badge-dot { background: var(--amber); animation: pulse 1.4s infinite; }
+    .badge-cancelled .badge-dot { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* =====================================================
+       MODAL DE DOBLE VERIFICACIÓN
+       ===================================================== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(11,31,58,.65);
+      backdrop-filter: blur(2px);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      width: min(460px, 95vw);
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    .modal-header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 18px 22px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--gray-400);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px;
+      transition: color .15s;
+    }
+    .modal-close:hover { color: var(--white); }
+    .modal-body { padding: 22px; }
+    .modal-summary {
+      background: var(--blue-muted);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+    .modal-row-label { color: var(--gray-600); }
+    .modal-row-value { font-weight: 700; font-family: var(--font-mono); color: var(--navy); }
+    .modal-warn {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: var(--amber-light);
+      border: 1px solid #FDE68A;
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #78350F;
+      margin-bottom: 18px;
+    }
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-cancel-modal {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      background: var(--white);
+      color: var(--gray-600);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-cancel-modal:hover { background: var(--gray-50); }
+    .btn-send {
+      flex: 2;
+      padding: 10px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-send:hover { background: #1450A0; }
+
+    /* =====================================================
+       TOAST DE CONFIRMACIÓN
+       ===================================================== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--navy);
+      color: var(--white);
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-md);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform .3s ease, opacity .3s ease;
+      z-index: 600;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-icon { color: #6EE7B7; }
+
+    /* =====================================================
+       UTILIDADES
+       ===================================================== */
+    .section-sep { height: 1px; background: var(--gray-200); margin: 16px 0; }
+    .icon-xs { width: 14px; height: 14px; }
+
+    /* Animación de entrada */
+    .card { animation: fadeUp .35s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- =====================================================
+     HEADER CON SEMÁFORO DE CONEXIÓN
+     ===================================================== -->
+<header class="header">
+  <div class="header-brand">
+    <!-- Ícono de gráfico de velas -->
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="5" width="3" height="10" rx="1" fill="#2563EB"/>
+      <rect x="4" y="3" width="1" height="2" fill="#2563EB"/>
+      <rect x="4" y="15" width="1" height="2" fill="#2563EB"/>
+      <rect x="9" y="7" width="3" height="6" rx="1" fill="#6EE7B7"/>
+      <rect x="10" y="5" width="1" height="2" fill="#6EE7B7"/>
+      <rect x="10" y="13" width="1" height="2" fill="#6EE7B7"/>
+      <rect x="15" y="4" width="3" height="9" rx="1" fill="#2563EB"/>
+      <rect x="16" y="2" width="1" height="2" fill="#2563EB"/>
+      <rect x="16" y="13" width="1" height="2" fill="#2563EB"/>
+    </svg>
+    IB Trading Desk
+  </div>
+  <div class="header-right">
+    <span class="header-time" id="clockDisplay">--:--:-- EST</span>
+    <!-- El atributo data-status controla el color del semáforo -->
+    <div class="conn-badge" id="connBadge" data-status="paper" title="Estado de conexión Interactive Brokers">
+      <div class="conn-light"></div>
+      <span class="conn-label" id="connLabel">Paper Trading</span>
+    </div>
+  </div>
+</header>
+
+<!-- =====================================================
+     ALERTA DE MODO PAPER TRADING
+     ===================================================== -->
+<div class="paper-alert visible" id="paperAlert">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path d="M8 1L15 14H1L8 1Z" stroke="#F59E0B" stroke-width="1.5" fill="none"/>
+    <rect x="7.25" y="5.5" width="1.5" height="4.5" rx=".75" fill="#F59E0B"/>
+    <rect x="7.25" y="11" width="1.5" height="1.5" rx=".75" fill="#F59E0B"/>
+  </svg>
+  MODO PAPER TRADING ACTIVO — Las órdenes no se ejecutarán en mercado real.
+</div>
+
+<!-- =====================================================
+     CONTENIDO PRINCIPAL — grid de dos columnas
+     ===================================================== -->
+<main class="main">
+
+  <!-- ── COL 1: FORMULARIO DE ORDEN ─────────────────── -->
+  <div class="card" style="grid-column:1; grid-row:1;">
+    <div class="card-header">
+      <svg class="icon-xs" viewBox="0 0 14 14" fill="none">
+        <path d="M2 7h10M7 2v10" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span class="card-title">Nueva Orden</span>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+
+        <!-- Ticker -->
+        <div class="form-row">
+          <label for="ticker">Instrumento</label>
+          <select id="ticker" onchange="updatePreview()">
+            <option value="AAPL"  data-price="189.42">AAPL — Apple Inc.</option>
+            <option value="MSFT"  data-price="415.26">MSFT — Microsoft Corp.</option>
+            <option value="GOOGL" data-price="175.84">GOOGL — Alphabet Inc.</option>
+            <option value="NVDA"  data-price="875.39">NVDA — NVIDIA Corp.</option>
+            <option value="AMZN"  data-price="191.77">AMZN — Amazon.com Inc.</option>
+            <option value="TSLA"  data-price="248.50">TSLA — Tesla Inc.</option>
+            <option value="META"  data-price="524.10">META — Meta Platforms</option>
+          </select>
+        </div>
+
+        <!-- Tipo de orden -->
+        <div class="form-row">
+          <label>Tipo de Orden</label>
+          <div class="order-type-group">
+            <button class="order-type-btn active" onclick="setOrderType('Market', this)">Market</button>
+            <button class="order-type-btn"        onclick="setOrderType('Limit',  this)">Limit</button>
+            <button class="order-type-btn"        onclick="setOrderType('Stop',   this)">Stop</button>
+          </div>
+        </div>
+
+        <!-- Cantidad y precio límite en fila -->
+        <div class="form-row-2">
+          <div class="form-row">
+            <label for="quantity">Cantidad (acciones)</label>
+            <input type="number" id="quantity" value="10" min="1" step="1"
+                   placeholder="0" oninput="updatePreview()" />
+          </div>
+          <div class="form-row" id="priceRow">
+            <label for="limitPrice" id="priceLabel">Precio Límite (USD)</label>
+            <input type="number" id="limitPrice" value="" min="0.01" step="0.01"
+                   placeholder="—" disabled oninput="updatePreview()" />
+          </div>
+        </div>
+
+        <!-- Dirección Buy / Sell -->
+        <div class="form-row">
+          <label>Dirección</label>
+          <div class="order-type-group">
+            <button class="order-type-btn active" style="color:inherit"
+                    id="btnBuy"  onclick="setSide('BUY',  this)">▲ Comprar</button>
+            <button class="order-type-btn" style="color:inherit"
+                    id="btnSell" onclick="setSide('SELL', this)">▼ Vender</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COL 2: VISTA PREVIA + BOTÓN CONFIRMAR ──────── -->
+  <div class="card preview-card">
+    <div class="card-header">
+      <svg class="icon-xs" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="2" width="12" height="10" rx="1.5" stroke="var(--blue)" stroke-width="1.5"/>
+        <path d="M4 7h6M4 9.5h3" stroke="var(--blue)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span class="card-title">Vista Previa de Orden</span>
+    </div>
+    <div class="card-body">
+      <div class="preview-grid">
+        <div class="preview-cell">
+          <div class="preview-label">Instrumento</div>
+          <div class="preview-value" id="pvTicker">AAPL</div>
+        </div>
+        <div class="preview-cell">
+          <div class="preview-label">Tipo / Dirección</div>
+          <div class="preview-value" id="pvType">Market · BUY</div>
+        </div>
+        <div class="preview-cell">
+          <div class="preview-label">Cantidad</div>
+          <div class="preview-value" id="pvQty">10 acc.</div>
+        </div>
+        <div class="preview-cell">
+          <div class="preview-label">Precio de referencia</div>
+          <div class="preview-value" id="pvPrice">$ 189.42</div>
+        </div>
+        <div class="preview-cell">
+          <div class="preview-label">Subtotal estimado</div>
+          <div class="preview-value" id="pvSubtotal">$ 1,894.20</div>
+        </div>
+        <div class="preview-cell">
+          <div class="preview-label">Comisión IB (est.)</div>
+          <div class="preview-value" id="pvComm">$ 1.00</div>
+        </div>
+        <div class="preview-cell full highlight">
+          <div class="preview-label">Costo Total Estimado</div>
+          <div class="preview-value big" id="pvTotal">$ 1,895.20</div>
+          <div class="preview-value dim" id="pvNote">Market order — ejecuta al mejor precio disponible</div>
+        </div>
+      </div>
+
+      <!-- Botón principal de confirmación -->
+      <button class="btn-confirm" id="btnConfirm" onclick="openModal()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8l3.5 3.5L13 4.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Confirmar Orden
+      </button>
+    </div>
+  </div>
+
+  <!-- ── FILA 2: HISTORIAL DE ÓRDENES ───────────────── -->
+  <div class="card history-card">
+    <div class="card-header">
+      <svg class="icon-xs" viewBox="0 0 14 14" fill="none">
+        <path d="M1 2h12M1 6h9M1 10h6" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="card-title">Historial de Órdenes Recientes</span>
+    </div>
+    <div class="table-wrap">
+      <table id="orderTable">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Ticker</th>
+            <th>Tipo</th>
+            <th>Dir.</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Comisión</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="orderHistory">
+          <!-- Filas de ejemplo iniciales -->
+          <tr>
+            <td class="td-mono">09:31:04</td>
+            <td class="td-ticker">AAPL</td>
+            <td>Market</td>
+            <td>BUY</td>
+            <td class="td-mono">50</td>
+            <td class="td-mono">$189.42</td>
+            <td class="td-mono">$1.00</td>
+            <td><span class="badge badge-filled"><span class="badge-dot"></span>Filled</span></td>
+          </tr>
+          <tr>
+            <td class="td-mono">09:45:18</td>
+            <td class="td-ticker">NVDA</td>
+            <td>Limit</td>
+            <td>SELL</td>
+            <td class="td-mono">15</td>
+            <td class="td-mono">$870.00</td>
+            <td class="td-mono">$1.00</td>
+            <td><span class="badge badge-pending"><span class="badge-dot"></span>Pending</span></td>
+          </tr>
+          <tr>
+            <td class="td-mono">10:02:55</td>
+            <td class="td-ticker">MSFT</td>
+            <td>Stop</td>
+            <td>SELL</td>
+            <td class="td-mono">20</td>
+            <td class="td-mono">$410.00</td>
+            <td class="td-mono">$1.00</td>
+            <td><span class="badge badge-cancelled"><span class="badge-dot"></span>Cancelled</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main><!-- /main -->
+
+<!-- =====================================================
+     MODAL DE DOBLE VERIFICACIÓN
+     ===================================================== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Confirmar Envío de Orden</span>
+      <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Resumen de la orden -->
+      <div class="modal-summary">
+        <div class="modal-row">
+          <span class="modal-row-label">Instrumento</span>
+          <span class="modal-row-value" id="mTicker">—</span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-row-label">Tipo de orden</span>
+          <span class="modal-row-value" id="mType">—</span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-row-label">Dirección</span>
+          <span class="modal-row-value" id="mSide">—</span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-row-label">Cantidad</span>
+          <span class="modal-row-value" id="mQty">—</span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-row-label">Precio estimado</span>
+          <span class="modal-row-value" id="mPrice">—</span>
+        </div>
+        <div style="height:8px"></div>
+        <div style="border-top:1px solid var(--gray-200); padding-top:10px;">
+          <div class="modal-row">
+            <span class="modal-row-label" style="font-weight:700;">Costo total estimado</span>
+            <span class="modal-row-value" style="font-size:16px;color:var(--blue);" id="mTotal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advertencia de doble verificación -->
+      <div class="modal-warn" id="modalWarn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+          <path d="M8 1L15 14H1L8 1Z" stroke="#F59E0B" stroke-width="1.5" fill="none"/>
+          <rect x="7.25" y="5.5" width="1.5" height="4.5" rx=".75" fill="#F59E0B"/>
+          <rect x="7.25" y="11" width="1.5" height="1.5" rx=".75" fill="#F59E0B"/>
+        </svg>
+        <span id="warnText">Esta acción enviará la orden al mercado. Verifique los parámetros antes de continuar.</span>
+      </div>
+
+      <!-- Acciones -->
+      <div class="modal-actions">
+        <button class="btn-cancel-modal" onclick="closeModal()">Cancelar</button>
+        <button class="btn-send"         onclick="sendOrder()">
+          Enviar Orden →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     TOAST DE CONFIRMACIÓN
+     ===================================================== -->
+<div class="toast" id="toast">
+  <span class="toast-icon">✓</span>
+  <span id="toastMsg">Orden enviada correctamente</span>
+</div>
+
+<!-- =====================================================
+     JAVASCRIPT — lógica de la interfaz
+     ===================================================== -->
+<script>
+  /* --------------------------------------------------
+     Estado global de la sesión de trading
+  -------------------------------------------------- */
+  let currentOrderType = 'Market';
+  let currentSide      = 'BUY';
+
+  /* Precio de referencia por ticker (simulado) */
+  const prices = {
+    AAPL: 189.42, MSFT: 415.26, GOOGL: 175.84,
+    NVDA: 875.39, AMZN: 191.77, TSLA: 248.50, META: 524.10
+  };
+
+  /* Cálculo de comisión IB (tiered simplificado):
+     $0.005/acción, mínimo $1.00, máximo 1% del valor */
+  function calcComm(qty, price) {
+    const raw = qty * 0.005;
+    const max  = qty * price * 0.01;
+    return Math.max(1, Math.min(raw, max));
+  }
+
+  /* Formateador de moneda */
+  const fmt = (n) => new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2
+  }).format(n);
+
+  /* --------------------------------------------------
+     Actualizar panel de vista previa
+  -------------------------------------------------- */
+  function updatePreview() {
+    const ticker = document.getElementById('ticker').value;
+    const qty    = parseFloat(document.getElementById('quantity').value) || 0;
+    const lpInp  = document.getElementById('limitPrice');
+    const refP   = currentOrderType === 'Market'
+                    ? prices[ticker]
+                    : (parseFloat(lpInp.value) || prices[ticker]);
+
+    const subtotal = qty * refP;
+    const comm     = calcComm(qty, refP);
+    const total    = subtotal + comm;
+
+    document.getElementById('pvTicker').textContent  = ticker;
+    document.getElementById('pvType').textContent    = `${currentOrderType} · ${currentSide}`;
+    document.getElementById('pvQty').textContent     = `${qty} acc.`;
+    document.getElementById('pvPrice').textContent   = fmt(refP);
+    document.getElementById('pvSubtotal').textContent = fmt(subtotal);
+    document.getElementById('pvComm').textContent    = fmt(comm);
+    document.getElementById('pvTotal').textContent   = fmt(total);
+
+    /* Nota descriptiva según tipo de orden */
+    const notes = {
+      Market: 'Market order — ejecuta al mejor precio disponible',
+      Limit:  'Limit order — ejecuta a precio límite o mejor',
+      Stop:   'Stop order — se activa cuando el precio cruza el nivel indicado'
+    };
+    document.getElementById('pvNote').textContent = notes[currentOrderType];
+
+    /* Deshabilitar botón si no hay cantidad válida */
+    document.getElementById('btnConfirm').disabled = qty <= 0;
+  }
+
+  /* --------------------------------------------------
+     Selección de tipo de orden
+  -------------------------------------------------- */
+  function setOrderType(type, btn) {
+    currentOrderType = type;
+    document.querySelectorAll('.order-type-group:nth-of-type(2) .order-type-btn')
+            .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    /* Habilitar campo de precio solo para Limit y Stop */
+    const priceInput = document.getElementById('limitPrice');
+    const priceLabel = document.getElementById('priceLabel');
+    if (type === 'Market') {
+      priceInput.disabled    = true;
+      priceInput.value       = '';
+      priceLabel.textContent = 'Precio Límite (USD)';
+    } else {
+      priceInput.disabled    = false;
+      priceLabel.textContent = type === 'Limit' ? 'Precio Límite (USD)' : 'Precio Stop (USD)';
+      if (!priceInput.value) priceInput.value = prices[document.getElementById('ticker').value];
+    }
+    updatePreview();
+  }
+
+  /* --------------------------------------------------
+     Selección de dirección (BUY / SELL)
+  -------------------------------------------------- */
+  function setSide(side, btn) {
+    currentSide = side;
+    document.getElementById('btnBuy').classList.remove('active');
+    document.getElementById('btnSell').classList.remove('active');
+    btn.classList.add('active');
+    updatePreview();
+  }
+
+  /* --------------------------------------------------
+     Semáforo de conexión — ciclo demo
+  -------------------------------------------------- */
+  const connStates = [
+    { status: 'connected',    label: 'Conectado — Live' },
+    { status: 'paper',        label: 'Paper Trading' },
+    { status: 'disconnected', label: 'Desconectado' }
+  ];
+  let connIdx = 1; // inicia en Paper Trading
+
+  function applyConnState(s) {
+    const badge = document.getElementById('connBadge');
+    badge.setAttribute('data-status', s.status);
+    document.getElementById('connLabel').textContent = s.label;
+
+    const alert = document.getElementById('paperAlert');
+    alert.classList.toggle('visible', s.status === 'paper');
+  }
+
+  /* Clic en el semáforo para cambiar estado (demo) */
+  document.getElementById('connBadge').addEventListener('click', () => {
+    connIdx = (connIdx + 1) % connStates.length;
+    applyConnState(connStates[connIdx]);
+  });
+  applyConnState(connStates[connIdx]);
+
+  /* --------------------------------------------------
+     Reloj en tiempo real (EST)
+  -------------------------------------------------- */
+  function updateClock() {
+    const now = new Date();
+    const est = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const h = String(est.getHours()).padStart(2, '0');
+    const m = String(est.getMinutes()).padStart(2, '0');
+    const s = String(est.getSeconds()).padStart(2, '0');
+    document.getElementById('clockDisplay').textContent = `${h}:${m}:${s} EST`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  /* --------------------------------------------------
+     Modal de confirmación
+  -------------------------------------------------- */
+  function openModal() {
+    const ticker = document.getElementById('ticker').value;
+    const qty    = parseFloat(document.getElementById('quantity').value) || 0;
+    const lpInp  = document.getElementById('limitPrice');
+    const refP   = currentOrderType === 'Market'
+                    ? prices[ticker]
+                    : (parseFloat(lpInp.value) || prices[ticker]);
+    const comm   = calcComm(qty, refP);
+    const total  = qty * refP + comm;
+
+    /* Rellenar resumen del modal */
+    document.getElementById('mTicker').textContent = ticker;
+    document.getElementById('mType').textContent   = currentOrderType;
+    document.getElementById('mSide').textContent   = currentSide;
+    document.getElementById('mQty').textContent    = `${qty} acciones`;
+    document.getElementById('mPrice').textContent  = fmt(refP);
+    document.getElementById('mTotal').textContent  = fmt(total);
+
+    /* Advertencia especial si está en modo Paper */
+    const isPaper = document.getElementById('connBadge').getAttribute('data-status') === 'paper';
+    document.getElementById('warnText').textContent = isPaper
+      ? '⚠ MODO PAPER: La orden se simulará y no afectará el mercado real.'
+      : 'Esta acción enviará la orden al mercado. Verifique los parámetros antes de continuar.';
+
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  /* Cerrar con Escape */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  /* --------------------------------------------------
+     Envío de orden (simulado) — agrega fila al historial
+  -------------------------------------------------- */
+  function sendOrder() {
+    const ticker = document.getElementById('ticker').value;
+    const qty    = parseInt(document.getElementById('quantity').value) || 0;
+    const lpInp  = document.getElementById('limitPrice');
+    const refP   = currentOrderType === 'Market'
+                    ? prices[ticker]
+                    : (parseFloat(lpInp.value) || prices[ticker]);
+    const comm   = calcComm(qty, refP);
+
+    /* Determinar estado inicial según tipo y conexión */
+    const connStatus = document.getElementById('connBadge').getAttribute('data-status');
+    const status = connStatus === 'disconnected' ? 'Cancelled'
+                 : currentOrderType === 'Market'  ? 'Filled'
+                 : 'Pending';
+
+    /* Hora actual */
+    const now = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+      timeZone: 'America/New_York'
+    });
+
+    /* Insertar fila al tope del historial */
+    const tbody = document.getElementById('orderHistory');
+    const tr    = document.createElement('tr');
+    const badgeClass = {
+      Filled: 'badge-filled', Pending: 'badge-pending', Cancelled: 'badge-cancelled'
+    }[status];
+
+    tr.innerHTML = `
+      <td class="td-mono">${now}</td>
+      <td class="td-ticker">${ticker}</td>
+      <td>${currentOrderType}</td>
+      <td>${currentSide}</td>
+      <td class="td-mono">${qty}</td>
+      <td class="td-mono">${fmt(refP)}</td>
+      <td class="td-mono">${fmt(comm)}</td>
+      <td><span class="badge ${badgeClass}"><span class="badge-dot"></span>${status}</span></td>
+    `;
+    /* Animación de entrada para la fila nueva */
+    tr.style.opacity = '0';
+    tr.style.transition = 'opacity .4s';
+    tbody.prepend(tr);
+    requestAnimationFrame(() => { tr.style.opacity = '1'; });
+
+    closeModal();
+    showToast(`Orden ${ticker} ${currentSide} ${qty} acc. — ${status}`);
+  }
+
+  /* --------------------------------------------------
+     Toast de notificación
+  -------------------------------------------------- */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  /* --------------------------------------------------
+     Inicialización
+  -------------------------------------------------- */
+  updatePreview();
+</script>
+</body>
+</html>

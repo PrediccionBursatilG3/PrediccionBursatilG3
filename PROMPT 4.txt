@@ -1,0 +1,24 @@
+<contexto>
+Modulo de regresion de precios. El LSTM Regressor predice precios continuos
+en USD usando ventanas de 60 dias. Arquitectura: LSTM(64) -> Dropout(0.2) ->
+LSTM(32) -> Dropout(0.2) -> Dense(16, relu) -> Dense(1, linear).
+Metrica: RMSE en USD y porcentaje respecto al precio medio.
+</contexto>
+<tarea>
+Genera una interfaz HTML + JavaScript con Plotly.js que muestre:
+1. Grafico dual: linea azul (precios reales), linea roja discontinua
+(prediccion LSTM), linea verde discontinua (prediccion ARIMA-LSTM).
+2. Panel de parametros tecnicos visible: epocas, dropout, batch size,
+tamano de ventana, learning rate.
+3. Metricas: RMSE (USD), RMSE (%), MAE, R-squared.
+4. Zona de prediccion futura (30 dias) con banda de confianza sombreada.
+5. Slider para ajustar el numero de dias de prediccion (7, 14, 30, 60).
+</tarea>
+<restricciones>
+- Datos simulados realistas para AAPL con tendencia alcista.
+- Plotly.js via CDN. HTML unico autocontenido.
+- Comentarios en espanol.
+</restricciones>
+<formato_salida>
+Archivo HTML completo con graficos interactivos de prediccion.
+</formato_salida>

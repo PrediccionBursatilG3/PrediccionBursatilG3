@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestAI — Consola de Control de Modelos IA</title>
+  <style>
+    /* =============================================
+       VARIABLES GLOBALES
+    ============================================= */
+    :root {
+      --azul:        #1F3864;
+      --azul-med:    #1a56db;
+      --azul-claro:  #e8f0fe;
+      --dorado:      #C5961A;
+      --dorado-bg:   #fef9ee;
+      --verde:       #1b7e34;
+      --verde-bg:    #e8f5e9;
+      --verde-med:   #43a047;
+      --rojo:        #c62828;
+      --rojo-bg:     #ffebee;
+      --amarillo:    #f57f17;
+      --amar-bg:     #fff8e1;
+      --gris-texto:  #5a6478;
+      --fondo:       #f0f2f6;
+      --blanco:      #ffffff;
+      --borde:       #dde1e8;
+      --sombra:      0 2px 10px rgba(0,0,0,0.09);
+      --radio:       10px;
+      --panel-w:     340px; /* ancho del panel lateral en desktop */
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--fondo);
+      color: #1c2333;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       NAVBAR
+    ============================================= */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      height: 52px;
+      background: var(--azul);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+    }
+
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.4px;
+    }
+    .nav-logo span { color: var(--dorado); }
+
+    .nav-centro {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      display: none; /* oculto en mobile, visible en desktop */
+    }
+
+    /* Botón hamburguesa solo en mobile */
+    .btn-hamburger {
+      display: none;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      border-radius: 7px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* Ticker selector en navbar */
+    .nav-ticker {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .nav-ticker label { font-size: 11px; color: rgba(255,255,255,0.6); }
+    .nav-ticker select {
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.13);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+    .nav-ticker select option { background: var(--azul); }
+
+    /* =============================================
+       LAYOUT PRINCIPAL: panel + contenido
+    ============================================= */
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 52px);
+      position: relative;
+    }
+
+    /* =============================================
+       PANEL LATERAL
+    ============================================= */
+    .panel-lateral {
+      width: var(--panel-w);
+      min-width: var(--panel-w);
+      background: var(--blanco);
+      border-right: 1px solid var(--borde);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+      /* En desktop: siempre visible */
+      position: relative;
+      z-index: 200;
+    }
+
+    /* Cabecera del panel */
+    .panel-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--borde);
+      background: var(--azul);
+    }
+
+    .panel-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 2px;
+    }
+
+    /* Contador de modelos activos */
+    .modelos-badge {
+      background: var(--dorado);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* Acciones rápidas del panel */
+    .panel-acciones {
+      display: flex;
+      gap: 6px;
+      margin-top: 0;
+    }
+
+    .btn-accion {
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      transition: background 0.2s;
+      text-align: center;
+    }
+    .btn-accion:hover { background: rgba(255,255,255,0.22); }
+
+    /* Filtro por tipo */
+    .panel-filtro {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      background: #f7f9ff;
+    }
+
+    .filtro-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--borde);
+      background: transparent;
+      color: var(--gris-texto);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .filtro-chip.activo {
+      background: var(--azul);
+      color: #fff;
+      border-color: var(--azul);
+    }
+    .filtro-chip:hover:not(.activo) {
+      background: var(--azul-claro);
+      border-color: var(--azul-med);
+      color: var(--azul-med);
+    }
+
+    /* Lista de modelos con scroll */
+    .modelos-lista {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      scroll-behavior: smooth;
+    }
+
+    /* Scrollbar personalizado */
+    .modelos-lista::-webkit-scrollbar { width: 5px; }
+    .modelos-lista::-webkit-scrollbar-thumb { background: var(--borde); border-radius: 3px; }
+    .modelos-lista::-webkit-scrollbar-thumb:hover { background: #b0b8c8; }
+
+    /* =============================================
+       TARJETA DE MODELO (checkbox + acordeón)
+    ============================================= */
+    .modelo-item {
+      border-bottom: 1px solid var(--borde);
+      transition: background 0.15s;
+    }
+    .modelo-item:last-child { border-bottom: none; }
+
+    /* Fila principal del modelo */
+    .modelo-fila {
+      display: flex;
+      align-items: center;
+      padding: 9px 14px;
+      gap: 9px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .modelo-fila:hover { background: #f5f7ff; }
+
+    /* Checkbox personalizado */
+    .chk-wrap {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .chk-wrap input[type="checkbox"] {
+      opacity: 0;
+      width: 0; height: 0;
+      position: absolute;
+    }
+    .chk-custom {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--borde);
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .chk-wrap input:checked + .chk-custom {
+      background: var(--azul-med);
+      border-color: var(--azul-med);
+    }
+    .chk-wrap input:checked + .chk-custom::after {
+      content: '';
+      position: absolute;
+      left: 4px; top: 1px;
+      width: 6px; height: 10px;
+      border: 2px solid #fff;
+      border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+
+    /* Info del modelo */
+    .modelo-info { flex: 1; min-width: 0; }
+
+    .modelo-nombre {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1c2333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modelo-desc {
+      font-size: 10px;
+      color: var(--gris-texto);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Badge de tipo: clasificación o regresión */
+    .tipo-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .tipo-clf { background: var(--azul-claro); color: var(--azul-med); }
+    .tipo-reg { background: var(--verde-bg);   color: var(--verde); }
+
+    /* Botón de acordeón */
+    .btn-acordeon {
+      background: none;
+      border: none;
+      padding: 2px 4px;
+      cursor: pointer;
+      color: var(--gris-texto);
+      font-size: 14px;
+      line-height: 1;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-acordeon.abierto { transform: rotate(180deg); }
+
+    /* Contenido del acordeón (hiperparámetros) */
+    .acordeon-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: #f8faff;
+      border-top: 1px solid transparent;
+    }
+    .acordeon-body.abierto {
+      max-height: 600px;
+      border-top-color: var(--borde);
+    }
+
+    .hiper-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px 14px;
+    }
+
+    /* Para campos que ocupan toda la fila */
+    .hiper-full { grid-column: 1 / -1; }
+
+    .hiper-campo { display: flex; flex-direction: column; gap: 3px; }
+
+    .hiper-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--azul-med);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .hiper-input,
+    .hiper-select {
+      width: 100%;
+      padding: 5px 8px;
+      font-size: 12px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      background: #fff;
+      color: #1c2333;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .hiper-input:focus,
+    .hiper-select:focus { border-color: var(--azul-med); }
+
+    /* Nota al pie del acordeón */
+    .hiper-nota {
+      font-size: 10px;
+      color: var(--gris-texto);
+      padding: 0 14px 10px;
+      line-height: 1.5;
+    }
+
+    /* =============================================
+       PIE DEL PANEL: Botón de ejecución
+    ============================================= */
+    .panel-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--borde);
+      background: var(--blanco);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Selector de ticker activo en el análisis */
+    .ticker-analisis {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--gris-texto);
+    }
+    .ticker-analisis select {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid var(--borde);
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+      color: #1c2333;
+      outline: none;
+    }
+
+    /* Botón ejecutar */
+    .btn-ejecutar {
+      width: 100%;
+      padding: 11px;
+      background: var(--azul);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.1s;
+      letter-spacing: 0.2px;
+    }
+    .btn-ejecutar:hover  { background: #162a4e; }
+    .btn-ejecutar:active { transform: scale(0.98); }
+    .btn-ejecutar:disabled {
+      background: #8a9bbb;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Spinner de carga */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: girar 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* Barra de progreso del análisis */
+    .progreso-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .progreso-label {
+      font-size: 11px;
+      color: var(--gris-texto);
+      display: flex;
+      justify-content: space-between;
+    }
+    .progreso-barra {
+      height: 5px;
+      background: var(--borde);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progreso-fill {
+      height: 5px;
+      background: linear-gradient(90deg, var(--azul-med), var(--dorado));
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* =============================================
+       ÁREA PRINCIPAL (métricas y contenido)
+    ============================================= */
+    .area-principal {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    /* =============================================
+       TARJETAS DE RESUMEN SUPERIORES
+    ============================================= */
+    .resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .res-card {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      padding: 12px 14px;
+      box-shadow: var(--sombra);
+      border-left: 3px solid var(--azul-med);
+    }
+    .res-card.verde  { border-left-color: var(--verde-med); }
+    .res-card.dorado { border-left-color: var(--dorado); }
+    .res-card.rojo   { border-left-color: var(--rojo); }
+
+    .res-label { font-size: 11px; color: var(--gris-texto); margin-bottom: 3px; }
+    .res-val   { font-size: 22px; font-weight: 700; color: var(--azul); line-height: 1; }
+    .res-sub   { font-size: 10px; color: var(--gris-texto); margin-top: 3px; }
+
+    /* =============================================
+       TABLA DE MÉTRICAS EN TIEMPO REAL
+    ============================================= */
+    .tabla-card {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio);
+      box-shadow: var(--sombra);
+      overflow: hidden;
+    }
+
+    .tabla-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tabla-titulo {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--azul);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* Indicador de tiempo real */
+    .rt-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--verde);
+      background: var(--verde-bg);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .rt-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--verde-med);
+      animation: pulso 1.8s infinite;
+    }
+    @keyframes pulso {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* Contenedor de la tabla con scroll horizontal en mobile */
+    .tabla-scroll { overflow-x: auto; }
+
+    table.metricas {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px; /* evita colapso en pantallas chicas */
+    }
+
+    table.metricas thead tr {
+      background: var(--azul);
+    }
+
+    table.metricas thead th {
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 9px 12px;
+      text-align: left;
+      white-space: nowrap;
+      letter-spacing: 0.4px;
+    }
+
+    table.metricas thead th:first-child { border-radius: 0; }
+
+    table.metricas tbody tr {
+      border-bottom: 1px solid var(--borde);
+      transition: background 0.15s;
+    }
+    table.metricas tbody tr:hover       { background: #f5f7ff; }
+    table.metricas tbody tr:last-child  { border-bottom: none; }
+    table.metricas tbody tr.inactivo    { opacity: 0.38; }
+
+    table.metricas td {
+      padding: 9px 12px;
+      font-size: 12px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* Columna de nombre del modelo */
+    .td-nombre {
+      font-weight: 700;
+      color: var(--azul);
+    }
+
+    .td-desc {
+      font-size: 10px;
+      color: var(--gris-texto);
+      font-weight: 400;
+      display: block;
+    }
+
+    /* Celda de valor con codificación de color */
+    .val-celda {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 58px;
+    }
+    .val-alto   { background: var(--verde-bg); color: var(--verde); }
+    .val-medio  { background: var(--amar-bg);  color: var(--amarillo); }
+    .val-bajo   { background: var(--rojo-bg);  color: var(--rojo); }
+    .val-neutro { background: var(--azul-claro); color: var(--azul-med); }
+    .val-na     { background: #f0f0f0; color: #999; font-weight: 400; font-style: italic; }
+
+    /* Señal BUY/SELL/HOLD */
+    .senal-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .senal-BUY  { background: var(--verde-bg); color: var(--verde); }
+    .senal-SELL { background: var(--rojo-bg);  color: var(--rojo); }
+    .senal-HOLD { background: var(--amar-bg);  color: var(--amarillo); }
+
+    /* Barra de accuracy en la celda */
+    .acc-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .acc-barra-cont {
+      width: 60px;
+      height: 5px;
+      background: var(--borde);
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .acc-barra-fill {
+      height: 5px;
+      border-radius: 3px;
+      transition: width 0.8s ease;
+    }
+
+    /* Estado del modelo: entrenando / listo / error */
+    .estado-chip {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .estado-listo     { background: var(--verde-bg); color: var(--verde); }
+    .estado-corriendo { background: var(--azul-claro); color: var(--azul-med); }
+    .estado-error     { background: var(--rojo-bg);  color: var(--rojo); }
+    .estado-inactivo  { background: #f0f0f0; color: #999; }
+
+    /* =============================================
+       PANEL DE LOG (consola de salida)
+    ============================================= */
+    .log-card {
+      background: #0d1b2a;
+      border: 1px solid #1e3050;
+      border-radius: var(--radio);
+      padding: 14px 16px;
+      font-family: 'Courier New', 'Consolas', monospace;
+      font-size: 11px;
+      color: #a8c5e8;
+      max-height: 180px;
+      overflow-y: auto;
+      line-height: 1.8;
+    }
+    .log-card::-webkit-scrollbar { width: 4px; }
+    .log-card::-webkit-scrollbar-thumb { background: #1e3050; border-radius: 2px; }
+
+    .log-linea { display: flex; gap: 8px; }
+    .log-ts    { color: #4a7aa8; flex-shrink: 0; }
+    .log-ok    { color: #4ade80; }
+    .log-warn  { color: var(--dorado); }
+    .log-err   { color: #f87171; }
+    .log-info  { color: #60a5fa; }
+
+    /* =============================================
+       OVERLAY del panel en mobile
+    ============================================= */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 190;
+    }
+
+    /* =============================================
+       RESPONSIVE — MOBILE (≤768px)
+    ============================================= */
+    @media (max-width: 768px) {
+      :root { --panel-w: 300px; }
+
+      .btn-hamburger  { display: block; }
+      .nav-centro     { display: none; }
+      .nav-ticker     { display: none; } /* se gestiona dentro del panel en mobile */
+
+      /* El panel se convierte en drawer lateral */
+      .panel-lateral {
+        position: fixed;
+        top: 52px;
+        left: 0;
+        height: calc(100vh - 52px);
+        transform: translateX(-100%);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+      }
+
+      .panel-lateral.abierto {
+        transform: translateX(0);
+      }
+
+      .overlay.visible { display: block; }
+
+      .resumen-grid { grid-template-columns: repeat(2, 1fr); }
+
+      .area-principal { padding: 10px; gap: 10px; }
+    }
+
+    /* =============================================
+       RESPONSIVE — TABLET (769px – 1100px)
+    ============================================= */
+    @media (min-width: 769px) {
+      .nav-centro { display: block; }
+    }
+
+    @media (max-width: 1100px) and (min-width: 769px) {
+      :root { --panel-w: 290px; }
+      .resumen-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* =============================================
+       ANIMACIÓN DE ENTRADA DE FILAS
+    ============================================= */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fila-nueva { animation: fadeIn 0.35s ease forwards; }
+  </style>
+</head>
+<body>
+
+<!-- =============================================
+     NAVBAR
+============================================= -->
+<nav class="navbar">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <!-- Hamburguesa solo en mobile -->
+    <button class="btn-hamburger" id="btn-ham" onclick="togglePanel()" aria-label="Abrir panel de modelos">☰</button>
+    <div class="nav-logo"><span>Invest</span>AI</div>
+  </div>
+  <div class="nav-centro">Consola de Control · Core de IA · RF-05 a RF-16</div>
+  <div class="nav-ticker">
+    <label>Ticker:</label>
+    <select id="ticker-nav" onchange="sincronizarTicker(this.value)">
+      <option value="AAPL">AAPL</option>
+      <option value="MSFT">MSFT</option>
+      <option value="TSLA">TSLA</option>
+      <option value="NVDA">NVDA</option>
+      <option value="BTC-USD">BTC</option>
+    </select>
+  </div>
+</nav>
+
+<!-- Overlay mobile -->
+<div class="overlay" id="overlay" onclick="togglePanel()"></div>
+
+<!-- =============================================
+     LAYOUT PRINCIPAL
+============================================= -->
+<div class="app-layout">
+
+  <!-- ==========================================
+       PANEL LATERAL DE MODELOS
+  =========================================== -->
+  <aside class="panel-lateral" id="panel-lateral">
+
+    <!-- Cabecera del panel -->
+    <div class="panel-header">
+      <div class="panel-header-top">
+        <div>
+          <div class="panel-title">Modelos IA activos</div>
+          <div class="panel-subtitle">Core del sistema · 16 modelos disponibles</div>
+        </div>
+        <div class="modelos-badge" id="badge-activos">16 / 16</div>
+      </div>
+      <div class="panel-acciones">
+        <button class="btn-accion" onclick="toggleTodos(true)">✓ Todos</button>
+        <button class="btn-accion" onclick="toggleTodos(false)">✗ Ninguno</button>
+        <button class="btn-accion" onclick="togglePorTipo('clf')">Solo CLF</button>
+        <button class="btn-accion" onclick="togglePorTipo('reg')">Solo REG</button>
+      </div>
+    </div>
+
+    <!-- Filtro por tipo -->
+    <div class="panel-filtro">
+      <button class="filtro-chip activo" data-filtro="todos" onclick="filtrar(this,'todos')">Todos</button>
+      <button class="filtro-chip" data-filtro="clf" onclick="filtrar(this,'clf')">Clasificación</button>
+      <button class="filtro-chip" data-filtro="reg" onclick="filtrar(this,'reg')">Regresión</button>
+    </div>
+
+    <!-- Lista de modelos (se renderiza con JS) -->
+    <div class="modelos-lista" id="modelos-lista"></div>
+
+    <!-- Pie: ticker + botón ejecutar -->
+    <div class="panel-footer">
+      <div class="ticker-analisis">
+        <span>Ticker:</span>
+        <select id="ticker-panel" onchange="sincronizarTicker(this.value)">
+          <option value="AAPL">AAPL — Apple</option>
+          <option value="MSFT">MSFT — Microsoft</option>
+          <option value="TSLA">TSLA — Tesla</option>
+          <option value="NVDA">NVDA — NVIDIA</option>
+          <option value="BTC-USD">BTC-USD — Bitcoin</option>
+        </select>
+      </div>
+
+      <!-- Barra de progreso (visible durante ejecución) -->
+      <div class="progreso-wrap" id="progreso-wrap">
+        <div class="progreso-label">
+          <span id="progreso-texto">Iniciando análisis...</span>
+          <span id="progreso-pct">0%</span>
+        </div>
+        <div class="progreso-barra">
+          <div class="progreso-fill" id="progreso-fill"></div>
+        </div>
+      </div>
+
+      <button class="btn-ejecutar" id="btn-ejecutar" onclick="ejecutarAnalisis()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btn-texto">▶ Ejecutar análisis</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==========================================
+       ÁREA PRINCIPAL
+  =========================================== -->
+  <main class="area-principal" id="area-principal">
+
+    <!-- Tarjetas de resumen -->
+    <div class="resumen-grid">
+      <div class="res-card">
+        <div class="res-label">Modelos activos</div>
+        <div class="res-val" id="res-activos">16</div>
+        <div class="res-sub">de 16 disponibles</div>
+      </div>
+      <div class="res-card verde">
+        <div class="res-label">Mejor accuracy</div>
+        <div class="res-val" id="res-mejor" style="color:var(--verde);">—</div>
+        <div class="res-sub" id="res-mejor-nom">Sin ejecutar</div>
+      </div>
+      <div class="res-card dorado">
+        <div class="res-label">Señal consolidada</div>
+        <div class="res-val" id="res-senal" style="color:var(--dorado);">—</div>
+        <div class="res-sub" id="res-senal-conf">Ensamblado de clasificadores</div>
+      </div>
+      <div class="res-card rojo">
+        <div class="res-label">Menor RMSE</div>
+        <div class="res-val" id="res-rmse" style="color:var(--rojo);">—</div>
+        <div class="res-sub" id="res-rmse-nom">Sin ejecutar</div>
+      </div>
+    </div>
+
+    <!-- Tabla de métricas en tiempo real -->
+    <div class="tabla-card">
+      <div class="tabla-header">
+        <div class="tabla-titulo">
+          📊 Métricas en tiempo real — Core de IA
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="rt-badge" id="rt-badge" style="display:none;">
+            <div class="rt-dot"></div>
+            Tiempo real
+          </div>
+          <span style="font-size:11px; color:var(--gris-texto);" id="ultima-actualizacion">
+            Sin ejecutar
+          </span>
+        </div>
+      </div>
+      <div class="tabla-scroll">
+        <table class="metricas" id="tabla-metricas">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Modelo</th>
+              <th>Tipo</th>
+              <th>Accuracy / R²</th>
+              <th>F1 / RMSE</th>
+              <th>Precision / MAE</th>
+              <th>Recall / MAPE</th>
+              <th>Señal</th>
+              <th>Estado</th>
+              <th>Tiempo (s)</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-body">
+            <!-- Estado inicial: sin ejecutar -->
+            <tr>
+              <td colspan="10" style="text-align:center; padding:32px; color:var(--gris-texto); font-size:13px;">
+                ⬅ Selecciona los modelos y presiona <strong>"Ejecutar análisis"</strong>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Log de consola -->
+    <div class="log-card" id="log-consola">
+      <div class="log-linea">
+        <span class="log-ts">[00:00:00]</span>
+        <span class="log-info">InvestAI Core — Consola de modelos lista. Selecciona modelos y ejecuta el análisis.</span>
+      </div>
+    </div>
+
+  </main><!-- /area-principal -->
+</div><!-- /app-layout -->
+
+
+<!-- =============================================
+     JAVASCRIPT — LÓGICA COMPLETA
+============================================= -->
+<script>
+  /* =============================================
+     DEFINICIÓN DE LOS 16 MODELOS IA
+     Cada modelo tiene: nombre, abreviatura, tipo
+     (clf/reg), descripción, hiperparámetros y
+     valores predeterminados de métricas para la
+     simulación de resultados.
+  ============================================= */
+  const MODELOS = [
+    {
+      id: 'svc', num: 1,
+      nombre: 'SVC', nombreCompleto: 'Support Vector Classifier',
+      tipo: 'clf', framework: 'scikit-learn',
+      desc: 'Clasifica tendencias con kernel RBF',
+      hipers: [
+        { id: 'kernel',  label: 'Kernel',    tipo: 'select', ops: ['rbf','linear','poly','sigmoid'], def: 'rbf' },
+        { id: 'C',       label: 'C (penalty)',tipo: 'number', def: 1.0,  min: 0.01, max: 100,  step: 0.1 },
+        { id: 'gamma',   label: 'Gamma',      tipo: 'select', ops: ['scale','auto'], def: 'scale' },
+        { id: 'prob',    label: 'Probability',tipo: 'select', ops: ['True','False'], def: 'True' },
+      ],
+      metricas: { acc: 84.2, f1: 82.9, prec: 82.1, rec: 83.7, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'lstm_clf', num: 2,
+      nombre: 'LSTM Clf.', nombreCompleto: 'LSTM Classifier',
+      tipo: 'clf', framework: 'TensorFlow/Keras',
+      desc: 'Red LSTM para clasificar tendencias',
+      hipers: [
+        { id: 'units1',   label: 'Unidades L1', tipo: 'number', def: 64,  min: 16, max: 256, step: 8 },
+        { id: 'units2',   label: 'Unidades L2', tipo: 'number', def: 32,  min: 8,  max: 128, step: 8 },
+        { id: 'dropout',  label: 'Dropout',     tipo: 'number', def: 0.2, min: 0,  max: 0.5, step: 0.05 },
+        { id: 'epochs',   label: 'Épocas',      tipo: 'number', def: 50,  min: 10, max: 200, step: 5 },
+        { id: 'batch',    label: 'Batch size',  tipo: 'select', ops: ['16','32','64','128'], def: '32' },
+        { id: 'ventana',  label: 'Ventana (d)', tipo: 'number', def: 60,  min: 10, max: 120, step: 5 },
+      ],
+      metricas: { acc: 81.7, f1: 80.4, prec: 79.8, rec: 81.0, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'bilstm', num: '2b',
+      nombre: 'BiLSTM Clf.', nombreCompleto: 'Bidirectional LSTM Classifier',
+      tipo: 'clf', framework: 'TensorFlow/Keras',
+      desc: 'LSTM bidireccional · captura dependencias pasadas y futuras',
+      hipers: [
+        { id: 'units',   label: 'Unidades',   tipo: 'number', def: 64,  min: 16, max: 256, step: 8 },
+        { id: 'dropout', label: 'Dropout',    tipo: 'number', def: 0.2, min: 0,  max: 0.5, step: 0.05 },
+        { id: 'epochs',  label: 'Épocas',     tipo: 'number', def: 50,  min: 10, max: 200, step: 5 },
+        { id: 'merge',   label: 'Merge mode', tipo: 'select', ops: ['concat','sum','ave','mul'], def: 'concat' },
+      ],
+      metricas: { acc: 80.1, f1: 79.2, prec: 78.5, rec: 79.8, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'nlp', num: 3,
+      nombre: 'NLP (VADER)', nombreCompleto: 'Natural Language Processing',
+      tipo: 'clf', framework: 'NLTK / spaCy',
+      desc: 'Análisis de sentimiento financiero con VADER',
+      hipers: [
+        { id: 'umbral_pos', label: 'Umbral BULL',  tipo: 'number', def: 0.05,  min: 0, max: 1, step: 0.01 },
+        { id: 'umbral_neg', label: 'Umbral BEAR',  tipo: 'number', def: -0.05, min: -1,max: 0, step: 0.01 },
+        { id: 'fuente',     label: 'Fuente',        tipo: 'select', ops: ['Yahoo News','Reuters','Bloomberg','Todos'], def: 'Todos' },
+        { id: 'ventana_n',  label: 'Noticias (n)', tipo: 'number', def: 20, min: 5, max: 100, step: 5 },
+      ],
+      metricas: { acc: 72.4, f1: 70.8, prec: 71.2, rec: 70.4, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'xgb', num: 4,
+      nombre: 'XGBoost', nombreCompleto: 'eXtreme Gradient Boosting',
+      tipo: 'clf', framework: 'xgboost',
+      desc: 'Gradient boosting de alta performance',
+      hipers: [
+        { id: 'n_est',    label: 'n_estimators', tipo: 'number', def: 200,  min: 50,  max: 1000, step: 50 },
+        { id: 'max_dep',  label: 'max_depth',    tipo: 'number', def: 6,    min: 1,   max: 15,   step: 1 },
+        { id: 'lr_xgb',  label: 'learning_rate',tipo: 'number', def: 0.1,  min: 0.01,max: 0.5,  step: 0.01 },
+        { id: 'subsamp', label: 'subsample',     tipo: 'number', def: 0.8,  min: 0.3, max: 1.0,  step: 0.05 },
+        { id: 'col_bt',  label: 'colsample_bytree', tipo:'number', def:0.8, min:0.3, max:1.0, step:0.05 },
+      ],
+      metricas: { acc: 79.4, f1: 78.1, prec: 77.9, rec: 78.3, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'gru', num: 5,
+      nombre: 'GRU Clf.', nombreCompleto: 'Gated Recurrent Unit Classifier',
+      tipo: 'clf', framework: 'TensorFlow/Keras',
+      desc: 'GRU · versión simplificada del LSTM',
+      hipers: [
+        { id: 'units_g',  label: 'Unidades',   tipo: 'number', def: 64, min: 16, max: 256, step: 8 },
+        { id: 'drop_g',   label: 'Dropout',    tipo: 'number', def: 0.2,min: 0,  max: 0.5, step: 0.05 },
+        { id: 'epochs_g', label: 'Épocas',     tipo: 'number', def: 50, min: 10, max: 200, step: 5 },
+        { id: 'recur_d',  label: 'Recurrent dropout', tipo:'number', def:0.1, min:0, max:0.5, step:0.05 },
+      ],
+      metricas: { acc: 77.5, f1: 76.2, prec: 75.8, rec: 76.6, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'llm', num: 6,
+      nombre: 'LLM (OpenAI)', nombreCompleto: 'Large Language Model',
+      tipo: 'clf', framework: 'OpenAI API',
+      desc: 'GPT como clasificador via API · análisis contextual',
+      hipers: [
+        { id: 'modelo_llm', label: 'Modelo',      tipo: 'select', ops: ['gpt-4o','gpt-4-turbo','gpt-3.5-turbo'], def: 'gpt-4o' },
+        { id: 'temp_llm',   label: 'Temperature', tipo: 'number', def: 0.2,  min: 0,  max: 2,   step: 0.1 },
+        { id: 'max_tok',    label: 'Max tokens',  tipo: 'number', def: 200,  min: 50, max: 1000, step: 50 },
+        { id: 'top_p',      label: 'Top-p',       tipo: 'number', def: 0.9,  min: 0,  max: 1,    step: 0.05 },
+      ],
+      metricas: { acc: 75.1, f1: 73.8, prec: 74.2, rec: 73.4, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'rfc', num: 7,
+      nombre: 'RFC', nombreCompleto: 'Random Forest Classifier',
+      tipo: 'clf', framework: 'scikit-learn',
+      desc: 'Bosque aleatorio · ensamblado de árboles de decisión',
+      hipers: [
+        { id: 'n_est_r',  label: 'n_estimators', tipo: 'number', def: 100, min: 10,  max: 500,  step: 10 },
+        { id: 'max_d_r',  label: 'max_depth',    tipo: 'select', ops: ['None','5','10','15','20'], def: 'None' },
+        { id: 'min_ss',   label: 'min_samples_split', tipo:'number', def:2, min:2, max:20, step:1 },
+        { id: 'n_jobs',   label: 'n_jobs',       tipo: 'select', ops: ['-1','1','2','4'], def: '-1' },
+      ],
+      metricas: { acc: 76.8, f1: 75.4, prec: 74.9, rec: 75.9, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'rnn', num: 8,
+      nombre: 'SimpleRNN', nombreCompleto: 'Simple Recurrent Neural Network',
+      tipo: 'clf', framework: 'TensorFlow/Keras',
+      desc: 'RNN simple · baseline de modelos recurrentes',
+      hipers: [
+        { id: 'units_r',  label: 'Unidades',   tipo: 'number', def: 64, min: 16, max: 256, step: 8 },
+        { id: 'drop_r',   label: 'Dropout',    tipo: 'number', def: 0.2,min: 0,  max: 0.5, step: 0.05 },
+        { id: 'epochs_r', label: 'Épocas',     tipo: 'number', def: 30, min: 5,  max: 100, step: 5 },
+        { id: 'activ_r',  label: 'Activation', tipo: 'select', ops: ['tanh','relu','sigmoid'], def: 'tanh' },
+      ],
+      metricas: { acc: 70.2, f1: 68.9, prec: 68.3, rec: 69.5, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'lstm_reg', num: 9,
+      nombre: 'LSTM Reg.', nombreCompleto: 'LSTM Regressor',
+      tipo: 'reg', framework: 'TensorFlow/Keras',
+      desc: 'Predicción continua de precios en USD',
+      hipers: [
+        { id: 'u1_lr',  label: 'Unidades L1', tipo: 'number', def: 64,  min: 16, max: 256, step: 8 },
+        { id: 'u2_lr',  label: 'Unidades L2', tipo: 'number', def: 32,  min: 8,  max: 128, step: 8 },
+        { id: 'dr_lr',  label: 'Dropout',     tipo: 'number', def: 0.2, min: 0,  max: 0.5, step: 0.05 },
+        { id: 'ep_lr',  label: 'Épocas',      tipo: 'number', def: 50,  min: 10, max: 200, step: 5 },
+        { id: 'vent_lr',label: 'Ventana (d)', tipo: 'number', def: 60,  min: 10, max: 120, step: 5 },
+        { id: 'lr_lr',  label: 'Learning rate', tipo: 'select', ops: ['0.001','0.0005','0.0001','0.01'], def: '0.001' },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 3.18, mae: 2.41, mape: 1.68 },
+    },
+    {
+      id: 'svr', num: '9b',
+      nombre: 'SVRegressor', nombreCompleto: 'Support Vector Regressor',
+      tipo: 'reg', framework: 'scikit-learn',
+      desc: 'SVR para predicción de precios continuos',
+      hipers: [
+        { id: 'ker_sv',  label: 'Kernel',  tipo: 'select', ops: ['rbf','linear','poly'], def: 'rbf' },
+        { id: 'C_sv',    label: 'C',       tipo: 'number', def: 1.0, min: 0.01, max: 100, step: 0.1 },
+        { id: 'eps_sv',  label: 'Epsilon', tipo: 'number', def: 0.1, min: 0.01, max: 1,   step: 0.01 },
+        { id: 'gam_sv',  label: 'Gamma',  tipo: 'select', ops: ['scale','auto'], def: 'scale' },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 5.42, mae: 4.11, mape: 2.87 },
+    },
+    {
+      id: 'linreg', num: '9c',
+      nombre: 'Lin. Multiv.', nombreCompleto: 'Regresión Lineal Multivariable',
+      tipo: 'reg', framework: 'scikit-learn',
+      desc: 'Baseline lineal · múltiples features',
+      hipers: [
+        { id: 'fit_int', label: 'fit_intercept', tipo: 'select', ops: ['True','False'], def: 'True' },
+        { id: 'norm_lm', label: 'Normalización', tipo: 'select', ops: ['StandardScaler','MinMaxScaler','None'], def: 'StandardScaler' },
+        { id: 'feat_lm', label: 'Features',      tipo: 'select', ops: ['OHLCV','OHLCV+TA','Solo Close'], def: 'OHLCV+TA' },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 9.21, mae: 7.34, mape: 4.88 },
+    },
+    {
+      id: 'polyreg', num: '9d',
+      nombre: 'Poly. Multiv.', nombreCompleto: 'Regresión Polinomial Multivariable',
+      tipo: 'reg', framework: 'scikit-learn',
+      desc: 'Captura relaciones no lineales entre features',
+      hipers: [
+        { id: 'grado',   label: 'Grado',        tipo: 'number', def: 2,  min: 2, max: 5, step: 1 },
+        { id: 'inter_f', label: 'Interaction only', tipo: 'select', ops: ['False','True'], def: 'False' },
+        { id: 'norm_pm', label: 'Normalización', tipo: 'select', ops: ['StandardScaler','MinMaxScaler'], def: 'StandardScaler' },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 7.84, mae: 6.02, mape: 4.14 },
+    },
+    {
+      id: 'arima_lstm', num: 10,
+      nombre: 'ARIMA-LSTM', nombreCompleto: 'Ensamblaje ARIMA + LSTM Regressor',
+      tipo: 'reg', framework: 'statsmodels + Keras',
+      desc: 'Híbrido: ARIMA captura linealidad, LSTM los residuos',
+      hipers: [
+        { id: 'p_ar',    label: 'ARIMA p',   tipo: 'number', def: 5,   min: 0, max: 20, step: 1 },
+        { id: 'd_ar',    label: 'ARIMA d',   tipo: 'number', def: 1,   min: 0, max: 3,  step: 1 },
+        { id: 'q_ar',    label: 'ARIMA q',   tipo: 'number', def: 0,   min: 0, max: 20, step: 1 },
+        { id: 'u_al',    label: 'LSTM units',tipo: 'number', def: 32,  min: 8, max: 128, step: 8 },
+        { id: 'ep_al',   label: 'Épocas',    tipo: 'number', def: 30,  min: 5, max: 100, step: 5 },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 2.94, mae: 2.21, mape: 1.55 },
+    },
+    {
+      id: 'ens_clf', num: 11,
+      nombre: 'Ensam. CLF', nombreCompleto: 'Ensamblado de Clasificadores',
+      tipo: 'clf', framework: 'scikit-learn',
+      desc: 'VotingClassifier sobre todos los clasificadores activos',
+      hipers: [
+        { id: 'voting',  label: 'Voting',       tipo: 'select', ops: ['soft','hard'], def: 'soft' },
+        { id: 'pesos',   label: 'Ponderación',  tipo: 'select', ops: ['Uniforme','Por accuracy','Manual'], def: 'Por accuracy' },
+        { id: 'n_jobs_e',label: 'n_jobs',       tipo: 'select', ops: ['-1','1','2','4'], def: '-1' },
+      ],
+      metricas: { acc: 86.1, f1: 85.0, prec: 84.6, rec: 85.4, rmse: null, mae: null, mape: null },
+    },
+    {
+      id: 'ens_reg', num: 12,
+      nombre: 'Ensam. REG', nombreCompleto: 'Ensamblado de Regresores',
+      tipo: 'reg', framework: 'scikit-learn',
+      desc: 'StackingRegressor sobre todos los regresores activos',
+      hipers: [
+        { id: 'metareg', label: 'Meta-regresor', tipo: 'select', ops: ['Ridge','Lasso','LinearRegression'], def: 'Ridge' },
+        { id: 'cv_stack',label: 'CV folds',      tipo: 'number', def: 5,   min: 2, max: 10, step: 1 },
+        { id: 'passth',  label: 'Passthrough',   tipo: 'select', ops: ['False','True'], def: 'False' },
+      ],
+      metricas: { acc: null, f1: null, prec: null, rec: null, rmse: 2.71, mae: 2.04, mape: 1.43 },
+    },
+  ];
+
+  /* =============================================
+     ESTADO GLOBAL
+  ============================================= */
+  let modelosActivos = new Set(MODELOS.map(m => m.id));
+  let acordeonesAbiertos = new Set();
+  let ejecutando = false;
+  let tickerActual = 'AAPL';
+  let resultados = {};    /* guarda las métricas tras ejecución */
+  let filtroActual = 'todos';
+
+  /* =============================================
+     RENDERIZADO DEL PANEL LATERAL
+  ============================================= */
+  function renderizarPanel() {
+    const lista = document.getElementById('modelos-lista');
+    const filtrados = filtroActual === 'todos'
+      ? MODELOS
+      : MODELOS.filter(m => m.tipo === filtroActual);
+
+    lista.innerHTML = filtrados.map(modelo => {
+      const activo = modelosActivos.has(modelo.id);
+      const abierto = acordeonesAbiertos.has(modelo.id);
+      const tipoBadge = modelo.tipo === 'clf'
+        ? '<span class="tipo-badge tipo-clf">CLF</span>'
+        : '<span class="tipo-badge tipo-reg">REG</span>';
+
+      /* Renderizar hiperparámetros */
+      const hiperHTML = modelo.hipers.map(h => {
+        if (h.tipo === 'select') {
+          const opts = h.ops.map(o =>
+            `<option value="${o}" ${o === h.def ? 'selected' : ''}>${o}</option>`
+          ).join('');
+          return `<div class="hiper-campo ${h.ancho === 'full' ? 'hiper-full' : ''}">
+            <label class="hiper-label" for="${modelo.id}_${h.id}">${h.label}</label>
+            <select class="hiper-select" id="${modelo.id}_${h.id}">${opts}</select>
+          </div>`;
+        } else {
+          return `<div class="hiper-campo">
+            <label class="hiper-label" for="${modelo.id}_${h.id}">${h.label}</label>
+            <input class="hiper-input" type="number"
+              id="${modelo.id}_${h.id}"
+              value="${h.def}"
+              min="${h.min ?? ''}"
+              max="${h.max ?? ''}"
+              step="${h.step ?? 1}">
+          </div>`;
+        }
+      }).join('');
+
+      return `
+        <div class="modelo-item" id="item-${modelo.id}"
+             data-tipo="${modelo.tipo}"
+             style="${!activo ? 'opacity:0.55;' : ''}">
+
+          <!-- Fila principal -->
+          <div class="modelo-fila" onclick="toggleCheckbox('${modelo.id}', event)">
+            <!-- Checkbox -->
+            <label class="chk-wrap" onclick="event.stopPropagation(); toggleCheckbox('${modelo.id}', event)">
+              <input type="checkbox"
+                id="chk-${modelo.id}"
+                ${activo ? 'checked' : ''}
+                onchange="onCheckboxChange('${modelo.id}')">
+              <span class="chk-custom"></span>
+            </label>
+
+            <!-- Número y nombre -->
+            <div class="modelo-info">
+              <div class="modelo-nombre">
+                <span style="color:var(--gris-texto); font-weight:400; font-size:10px;">${modelo.num}.</span>
+                ${modelo.nombre}
+              </div>
+              <div class="modelo-desc">${modelo.desc}</div>
+            </div>
+
+            ${tipoBadge}
+
+            <!-- Botón acordeón -->
+            <button class="btn-acordeon ${abierto ? 'abierto' : ''}"
+              id="btn-ac-${modelo.id}"
+              onclick="event.stopPropagation(); toggleAcordeon('${modelo.id}')"
+              title="Configurar hiperparámetros">
+              ▾
+            </button>
+          </div>
+
+          <!-- Acordeón de hiperparámetros -->
+          <div class="acordeon-body ${abierto ? 'abierto' : ''}" id="ac-${modelo.id}">
+            <div class="hiper-grid">${hiperHTML}</div>
+            <div class="hiper-nota">
+              Framework: <strong>${modelo.framework}</strong> ·
+              <span style="color:var(--azul-med);">${modelo.nombreCompleto}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    actualizarBadge();
+  }
+
+  /* =============================================
+     TOGGLE CHECKBOX DE UN MODELO
+  ============================================= */
+  function toggleCheckbox(id, event) {
+    /* Si el clic fue directo en el checkbox o su label, dejamos que
+       el evento nativo del <input> maneje el cambio */
+    if (event && (event.target.tagName === 'INPUT' || event.target.classList.contains('chk-custom'))) return;
+
+    const chk = document.getElementById(`chk-${id}`);
+    if (!chk) return;
+    chk.checked = !chk.checked;
+    onCheckboxChange(id);
+  }
+
+  function onCheckboxChange(id) {
+    const chk = document.getElementById(`chk-${id}`);
+    const item = document.getElementById(`item-${id}`);
+    if (!chk || !item) return;
+
+    if (chk.checked) {
+      modelosActivos.add(id);
+      item.style.opacity = '1';
+    } else {
+      modelosActivos.delete(id);
+      item.style.opacity = '0.55';
+    }
+    actualizarBadge();
+    actualizarContadores();
+  }
+
+  /* =============================================
+     TOGGLE ACORDEÓN
+  ============================================= */
+  function toggleAcordeon(id) {
+    const body = document.getElementById(`ac-${id}`);
+    const btn  = document.getElementById(`btn-ac-${id}`);
+    if (!body || !btn) return;
+
+    if (acordeonesAbiertos.has(id)) {
+      acordeonesAbiertos.delete(id);
+      body.classList.remove('abierto');
+      btn.classList.remove('abierto');
+    } else {
+      acordeonesAbiertos.add(id);
+      body.classList.add('abierto');
+      btn.classList.add('abierto');
+    }
+  }
+
+  /* =============================================
+     TOGGLE TODOS / NINGUNO
+  ============================================= */
+  function toggleTodos(estado) {
+    MODELOS.forEach(m => {
+      const chk  = document.getElementById(`chk-${m.id}`);
+      const item = document.getElementById(`item-${m.id}`);
+      if (!chk) return;
+      chk.checked = estado;
+      if (estado) {
+        modelosActivos.add(m.id);
+        if (item) item.style.opacity = '1';
+      } else {
+        modelosActivos.delete(m.id);
+        if (item) item.style.opacity = '0.55';
+      }
+    });
+    actualizarBadge();
+    actualizarContadores();
+  }
+
+  /* =============================================
+     TOGGLE POR TIPO (clf / reg)
+  ============================================= */
+  function togglePorTipo(tipo) {
+    MODELOS.forEach(m => {
+      const chk  = document.getElementById(`chk-${m.id}`);
+      const item = document.getElementById(`item-${m.id}`);
+      if (!chk) return;
+      const deberia = (m.tipo === tipo);
+      chk.checked = deberia;
+      if (deberia) {
+        modelosActivos.add(m.id);
+        if (item) item.style.opacity = '1';
+      } else {
+        modelosActivos.delete(m.id);
+        if (item) item.style.opacity = '0.55';
+      }
+    });
+    actualizarBadge();
+    actualizarContadores();
+  }
+
+  /* =============================================
+     FILTRAR LISTA POR TIPO
+  ============================================= */
+  function filtrar(btn, tipo) {
+    document.querySelectorAll('.filtro-chip').forEach(c => c.classList.remove('activo'));
+    btn.classList.add('activo');
+    filtroActual = tipo;
+    renderizarPanel();
+  }
+
+  /* =============================================
+     ACTUALIZAR BADGE DE MODELOS ACTIVOS
+  ============================================= */
+  function actualizarBadge() {
+    document.getElementById('badge-activos').textContent =
+      `${modelosActivos.size} / ${MODELOS.length}`;
+  }
+
+  /* =============================================
+     ACTUALIZAR CONTADORES EN RESUMEN
+  ============================================= */
+  function actualizarContadores() {
+    document.getElementById('res-activos').textContent = modelosActivos.size;
+  }
+
+  /* =============================================
+     SINCRONIZAR TICKER ENTRE NAVBAR Y PANEL
+  ============================================= */
+  function sincronizarTicker(val) {
+    tickerActual = val;
+    document.getElementById('ticker-nav').value   = val;
+    document.getElementById('ticker-panel').value = val;
+  }
+
+  /* =============================================
+     HELPER: VARIACIÓN ALEATORIA PEQUEÑA
+  ============================================= */
+  function variar(base, pct = 0.04) {
+    return base * (1 + (Math.random() * 2 - 1) * pct);
+  }
+
+  /* =============================================
+     HELPER: CLASE DE COLOR SEGÚN VALOR
+  ============================================= */
+  function claseAcc(v) {
+    if (v >= 82) return 'val-alto';
+    if (v >= 72) return 'val-medio';
+    return 'val-bajo';
+  }
+
+  function claseRMSE(v, es_btc) {
+    /* Para BTC los valores son miles de veces mayores */
+    const lim = es_btc ? 2000 : 5;
+    if (v <= lim * 0.7) return 'val-alto';
+    if (v <= lim * 1.2) return 'val-medio';
+    return 'val-bajo';
+  }
+
+  /* =============================================
+     HELPER: SEÑAL ALEATORIA SESGADA AL BUY
+  ============================================= */
+  function senalAleatoria() {
+    const r = Math.random();
+    if (r < 0.48) return 'BUY';
+    if (r < 0.78) return 'HOLD';
+    return 'SELL';
+  }
+
+  /* =============================================
+     AGREGAR LÍNEA AL LOG
+  ============================================= */
+  function log(mensaje, tipo = 'info') {
+    const consola = document.getElementById('log-consola');
+    const ahora   = new Date();
+    const ts      = ahora.toTimeString().slice(0, 8);
+    const claseMap = { ok: 'log-ok', warn: 'log-warn', err: 'log-err', info: 'log-info' };
+    const div = document.createElement('div');
+    div.className = 'log-linea';
+    div.innerHTML = `<span class="log-ts">[${ts}]</span><span class="${claseMap[tipo] || 'log-info'}">${mensaje}</span>`;
+    consola.appendChild(div);
+    consola.scrollTop = consola.scrollHeight;
+  }
+
+  /* =============================================
+     EJECUCIÓN DEL ANÁLISIS (simulada)
+     Itera sobre cada modelo activo con delay
+     para simular entrenamiento/inferencia real
+  ============================================= */
+  async function ejecutarAnalisis() {
+    if (ejecutando) return;
+    const activos = MODELOS.filter(m => modelosActivos.has(m.id));
+    if (activos.length === 0) {
+      log('⚠ Sin modelos activos. Activa al menos uno.', 'warn');
+      return;
+    }
+
+    ejecutando = true;
+    resultados = {};
+
+    /* UI: estado ejecutando */
+    const btnEj   = document.getElementById('btn-ejecutar');
+    const spinner = document.getElementById('spinner');
+    const btnTxt  = document.getElementById('btn-texto');
+    const progWrap = document.getElementById('progreso-wrap');
+    const progFill = document.getElementById('progreso-fill');
+    const progTxt  = document.getElementById('progreso-texto');
+    const progPct  = document.getElementById('progreso-pct');
+
+    btnEj.disabled   = true;
+    spinner.style.display = 'block';
+    btnTxt.textContent    = 'Ejecutando...';
+    progWrap.style.display = 'flex';
+
+    /* Limpiar tabla */
+    const tbody = document.getElementById('tabla-body');
+    tbody.innerHTML = '';
+    document.getElementById('rt-badge').style.display = 'flex';
+
+    log(`▶ Iniciando análisis · ${activos.length} modelos · Ticker: ${tickerActual}`, 'info');
+    log(`Datos: Yahoo Finance (yfinance) · ventana 180 días`, 'info');
+
+    const esBTC = tickerActual === 'BTC-USD';
+
+    for (let i = 0; i < activos.length; i++) {
+      const modelo = activos[i];
+      const pct = Math.round(((i) / activos.length) * 100);
+      progFill.style.width = pct + '%';
+      progTxt.textContent  = `Ejecutando ${modelo.nombre}...`;
+      progPct.textContent  = pct + '%';
+
+      /* Fila con estado "corriendo" */
+      const trId = `tr-${modelo.id}`;
+      const trTemp = document.createElement('tr');
+      trTemp.id = trId;
+      trTemp.className = 'fila-nueva';
+      trTemp.innerHTML = `
+        <td>${modelo.num}</td>
+        <td class="td-nombre">
+          ${modelo.nombre}
+          <span class="td-desc">${modelo.nombreCompleto}</span>
+        </td>
+        <td>${modelo.tipo === 'clf'
+          ? '<span class="tipo-badge tipo-clf">CLF</span>'
+          : '<span class="tipo-badge tipo-reg">REG</span>'}</td>
+        <td colspan="6"><span class="estado-chip estado-corriendo">⟳ Calculando...</span></td>
+        <td>—</td>`;
+      tbody.appendChild(trTemp);
+      tbody.scrollTop = tbody.scrollHeight;
+
+      /* Delay simulado según complejidad del modelo */
+      const delay = {
+        'svc': 400, 'lstm_clf': 700, 'bilstm': 650, 'nlp': 300,
+        'xgb': 450, 'gru': 600, 'llm': 800, 'rfc': 350,
+        'rnn': 500, 'lstm_reg': 750, 'svr': 380, 'linreg': 200,
+        'polyreg': 280, 'arima_lstm': 900, 'ens_clf': 500, 'ens_reg': 480,
+      };
+      await sleep(delay[modelo.id] ?? 400);
+
+      /* Calcular resultado */
+      const base = modelo.metricas;
+      const es_clf = modelo.tipo === 'clf';
+
+      let acc, f1, prec, rec, rmse, mae, mape, senal, tiempo;
+      tiempo = ((delay[modelo.id] ?? 400) / 1000 * variar(1, 0.15)).toFixed(2);
+
+      if (es_clf) {
+        acc   = variar(base.acc,  0.03).toFixed(1);
+        f1    = variar(base.f1,   0.03).toFixed(1);
+        prec  = variar(base.prec, 0.03).toFixed(1);
+        rec   = variar(base.rec,  0.03).toFixed(1);
+        senal = senalAleatoria();
+      } else {
+        const escala = esBTC ? 580 : 1;
+        rmse = (variar(base.rmse, 0.08) * escala).toFixed(esBTC ? 0 : 2);
+        mae  = (variar(base.mae,  0.08) * escala).toFixed(esBTC ? 0 : 2);
+        mape = variar(base.mape, 0.06).toFixed(2);
+        /* R² simulado */
+        const r2 = Math.min(0.99, 0.94 - (parseFloat(mape) / 100)).toFixed(4);
+        senal = senalAleatoria();
+        acc = r2; f1 = mape; prec = mae; rec = mape;
+      }
+
+      resultados[modelo.id] = { acc, f1, prec, rec, rmse, mae, mape, senal, tiempo, es_clf };
+
+      /* Actualizar fila con resultados reales */
+      const tr = document.getElementById(trId);
+      if (!tr) continue;
+      tr.innerHTML = buildFila(modelo, resultados[modelo.id], esBTC);
+
+      log(`  ✔ ${modelo.nombre.padEnd(14)} ${es_clf
+        ? `Acc: ${acc}%  F1: ${f1}%  Señal: ${senal}`
+        : `RMSE: ${esBTC ? '$' : '$'}${rmse}  MAE: ${mae}  Señal: ${senal}`}`, 'ok');
+    }
+
+    /* Finalizar */
+    progFill.style.width = '100%';
+    progPct.textContent  = '100%';
+    progTxt.textContent  = '¡Análisis completado!';
+
+    /* Actualizar resumen */
+    actualizarResumen(esBTC);
+
+    const ahora = new Date().toLocaleTimeString('es-PE');
+    document.getElementById('ultima-actualizacion').textContent = `Actualizado: ${ahora}`;
+
+    log(`\n✔ Análisis completado · ${activos.length} modelos · Ticker: ${tickerActual}`, 'ok');
+
+    setTimeout(() => {
+      ejecutando = false;
+      btnEj.disabled = false;
+      spinner.style.display = 'none';
+      btnTxt.textContent = '▶ Ejecutar análisis';
+      progWrap.style.display = 'none';
+    }, 1200);
+  }
+
+  /* =============================================
+     CONSTRUIR HTML DE UNA FILA DE RESULTADO
+  ============================================= */
+  function buildFila(modelo, res, esBTC) {
+    const tipoBadge = modelo.tipo === 'clf'
+      ? '<span class="tipo-badge tipo-clf">CLF</span>'
+      : '<span class="tipo-badge tipo-reg">REG</span>';
+
+    const senalPill = `<span class="senal-pill senal-${res.senal}">${res.senal}</span>`;
+
+    let col_acc, col_f1, col_prec, col_rec;
+
+    if (res.es_clf) {
+      const accNum = parseFloat(res.acc);
+      const barra  = `<div class="acc-wrap">
+        <div class="acc-barra-cont"><div class="acc-barra-fill" style="width:${accNum}%; background:${accNum>=82?'var(--verde-med)':accNum>=72?'var(--amarillo)':'var(--rojo)'};"></div></div>
+        <span class="${claseAcc(accNum)} val-celda">${res.acc}%</span>
+      </div>`;
+      col_acc  = barra;
+      col_f1   = `<span class="${claseAcc(parseFloat(res.f1))} val-celda">${res.f1}%</span>`;
+      col_prec = `<span class="${claseAcc(parseFloat(res.prec))} val-celda">${res.prec}%</span>`;
+      col_rec  = `<span class="${claseAcc(parseFloat(res.rec))} val-celda">${res.rec}%</span>`;
+    } else {
+      /* Para regresores: Acc = R², F1 = RMSE, Prec = MAE, Rec = MAPE */
+      const r2num  = parseFloat(res.acc);
+      const rmseN  = parseFloat(res.f1); /* aquí f1 = mape, prec = mae */
+      col_acc  = `<span class="${r2num >= 0.93 ? 'val-alto' : r2num >= 0.87 ? 'val-medio' : 'val-bajo'} val-celda">${res.acc}</span>`;
+      col_f1   = `<span class="${claseRMSE(parseFloat(res.rmse), esBTC) } val-celda">${esBTC ? '$' : '$'}${res.rmse}</span>`;
+      col_prec = `<span class="val-neutro val-celda">${esBTC ? '$' : '$'}${res.mae}</span>`;
+      col_rec  = `<span class="val-neutro val-celda">${res.mape}%</span>`;
+    }
+
+    return `
+      <td style="font-size:11px; color:var(--gris-texto);">${modelo.num}</td>
+      <td class="td-nombre">
+        ${modelo.nombre}
+        <span class="td-desc">${modelo.nombreCompleto}</span>
+      </td>
+      <td>${tipoBadge}</td>
+      <td>${col_acc}</td>
+      <td>${col_f1}</td>
+      <td>${col_prec}</td>
+      <td>${col_rec}</td>
+      <td>${senalPill}</td>
+      <td><span class="estado-chip estado-listo">✓ Listo</span></td>
+      <td style="font-size:11px; color:var(--gris-texto);">${res.tiempo}s</td>`;
+  }
+
+  /* =============================================
+     ACTUALIZAR TARJETAS DE RESUMEN
+  ============================================= */
+  function actualizarResumen(esBTC) {
+    /* Mejor accuracy (clasificadores) */
+    const clfs = Object.entries(resultados).filter(([id]) => {
+      const m = MODELOS.find(m => m.id === id);
+      return m && m.tipo === 'clf';
+    });
+    if (clfs.length > 0) {
+      const mejor = clfs.reduce((a, b) =>
+        parseFloat(a[1].acc) > parseFloat(b[1].acc) ? a : b
+      );
+      const mNom = MODELOS.find(m => m.id === mejor[0]);
+      document.getElementById('res-mejor').textContent     = mejor[1].acc + '%';
+      document.getElementById('res-mejor-nom').textContent = mNom?.nombre ?? '';
+    }
+
+    /* Menor RMSE (regresores) */
+    const regs = Object.entries(resultados).filter(([id]) => {
+      const m = MODELOS.find(m => m.id === id);
+      return m && m.tipo === 'reg' && resultados[id].rmse != null;
+    });
+    if (regs.length > 0) {
+      const menor = regs.reduce((a, b) =>
+        parseFloat(a[1].rmse) < parseFloat(b[1].rmse) ? a : b
+      );
+      const mNom = MODELOS.find(m => m.id === menor[0]);
+      const rmseV = parseFloat(menor[1].rmse);
+      document.getElementById('res-rmse').textContent     = (esBTC ? '$' : '$') + menor[1].rmse;
+      document.getElementById('res-rmse-nom').textContent = mNom?.nombre ?? '';
+    }
+
+    /* Señal consolidada del ensamblado */
+    const ensClf = resultados['ens_clf'];
+    if (ensClf) {
+      document.getElementById('res-senal').textContent    = ensClf.senal;
+      document.getElementById('res-senal-conf').textContent = `Ensamblado · Conf. ~${(72 + Math.random() * 15).toFixed(1)}%`;
+    }
+  }
+
+  /* =============================================
+     UTILIDAD: SLEEP
+  ============================================= */
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /* =============================================
+     TOGGLE PANEL LATERAL (mobile)
+  ============================================= */
+  function togglePanel() {
+    const panel   = document.getElementById('panel-lateral');
+    const overlay = document.getElementById('overlay');
+    panel.classList.toggle('abierto');
+    overlay.classList.toggle('visible');
+  }
+
+  /* =============================================
+     INIT
+  ============================================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    renderizarPanel();
+    actualizarContadores();
+    log('Sistema listo. ' + MODELOS.length + ' modelos disponibles · RF-05 a RF-16.', 'ok');
+    log('Selecciona los modelos, configura sus hiperparámetros y ejecuta el análisis.', 'info');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<contexto> Eres un desarrollador frontend senior y diseñador UI/UX experto en interfaces financieras modernas (Fintech). Estás construyendo el módulo de "Generación de Estrategias de Inversión" para un Sistema Web de Apoyo en Decisiones de Inversión usando Inteligencia Artificial. Tu objetivo es crear una interfaz visualmente impactante, de grado institucional y que no luzca anticuada. </contexto> 
+
+<tarea> Genera un componente funcional en React que implemente una pantalla moderna con:
+Formulario de perfil de inversor interactivo: Usar un 'slider' estilizado para la tolerancia al riesgo (1-10), selectores modernos (dropdowns) para el horizonte temporal, y un input numérico limpio para el capital disponible.
+Panel de estrategias sugeridas: Tarjetas (Cards) de estrategias de opciones financieras (ej. Covered Call, Iron Condor, Bull Call Spread). Cada tarjeta debe ser visualmente atractiva, mostrando el nombre, riesgo máximo, beneficio máximo, punto de equilibrio y un mini-gráfico de payoff simulado.
+Panel superior con indicadores clave: Tarjetas pequeñas y modernas mostrando el Sharpe Ratio, Sortino Ratio y Calmar Ratio con iconos relevantes. </tarea> 
+
+
+<restricciones>
+Tecnologías estrictas: React, Tailwind CSS (imprescindible para garantizar un diseño moderno, usando clases como shadow-lg, rounded-xl, backdrop-blur) y Lucide React para los iconos.
+Diseño UI/UX: Prohibido usar estilos HTML por defecto. La interfaz debe lucir como una aplicación Fintech moderna (ej. Robinhood o Binance).
+Responsividad total: Debe usar CSS Grid/Flexbox para verse perfecto en Navegador Web Desktop (1920x1080) y colapsar a una sola columna responsiva para Aplicación Mobile (375x812).
+Paleta de colores: Fondo principal muy claro (gris apagado o blanco), color primario azul oscuro (#1F3864), acentos en dorado (#C5961A)
+.
+Usar datos simulados (mock data) de opciones financieras para llenar la interfaz
+. </restricciones> 
+
+
+<formato_salida> Un único bloque de código con el componente React funcional completo, listo para previsualizarse interactivamente. Todo el diseño debe estar gestionado a través de clases utilitarias de Tailwind CSS. </formato_salida>

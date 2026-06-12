@@ -1,0 +1,71 @@
+<contexto>
+  Eres un desarrollador frontend senior especializado en visualización
+  de datos financieros. Estás construyendo el módulo de reportes de
+  backtesting para el Sistema de Predicción Bursátil Inteligente (SPBI).
+  El módulo de backtesting usa la librería VectorBT de Python para
+  simular estrategias de inversión sobre datos históricos.
+  Estrategias disponibles: BUY/SELL Simple, Covered Call, Iron Condor.
+  Capital inicial: $100,000 USD. Comisión: 0.10% por operación.
+  Slippage: 0.05%. El reporte corresponde al requisito RF-BT-01 del ERS.
+  Las métricas a visualizar incluyen: Retorno Total, Retorno Anualizado,
+  Ratio de Sharpe, Ratio de Sortino, Ratio de Calmar, Máximo Drawdown,
+  Win Rate, Profit Factor, Total de Operaciones y Exposición al Mercado.
+</contexto>
+<tarea>
+  Genera un dashboard HTML con Plotly.js y Chart.js (CDN) que incluya:
+  1. BARRA DE KPIs (FILA 1 — 5 tarjetas):
+     - Retorno Total (%), Retorno Anualizado (%), Win Rate (%),
+       Profit Factor, Total Operaciones.
+     - Colores: verde para métricas positivas, rojo para negativas.
+  2. BARRA DE KPIs (FILA 2 — 5 tarjetas):
+     - Sharpe Ratio, Sortino Ratio, Calmar Ratio,
+       Máximo Drawdown (%), Exposición al Mercado (%).
+  3. CURVA DE EQUITY (Plotly.js):
+     - Línea azul oscuro (estrategia activa) vs línea gris punteada
+       (Buy & Hold) sobre datos simulados de 6 meses.
+     - Fill bajo la curva de estrategia con transparencia.
+  4. PANEL DE MÉTRICAS DE RIESGO (barras de progreso):
+     - Win Rate, Profit Factor, Sharpe, Sortino, Max Drawdown,
+       Exposición. Barras de colores según valor positivo/negativo.
+     - Panel de configuración: capital inicial, comisión, slippage, período.
+  5. HISTOGRAMA DE RETORNOS POR OPERACIÓN (Chart.js):
+     - Barras verdes para retornos positivos, rojas para negativos.
+     - Generado con datos simulados de 300 operaciones.
+  6. CURVA DE DRAWDOWN (Chart.js):
+     - Línea roja con fill, mostrando la evolución del drawdown
+       porcentual durante el período de backtesting.
+  7. TABLA DE OPERACIONES EJECUTADAS:
+     - Columnas: #, Fecha Entrada, Fecha Salida, Ticker, Tipo (BUY/SELL),
+       Precio Entrada, Precio Salida, Cantidad, P&L ($), P&L (%), Resultado.
+     - Badges de color: verde (Win), rojo (Loss).
+  8. SELECTOR DE ESTRATEGIA:
+     - Tabs: BUY/SELL Simple | Covered Call | Iron Condor.
+     - Al cambiar, regenera todos los gráficos con nuevos datos simulados.
+  9. CONTROLES SUPERIORES:
+     - Dropdown de ticker, selector de período, botón Ejecutar,
+       botones de exportar PDF y CSV.
+</tarea>
+<restricciones>
+  - Paleta: fondo #F4F6FB, navy #1F3864, oro #C5961A,
+    verde #16A34A, rojo #DC2626, amarillo #D97706.
+  - Fuente: Inter y Space Grotesk desde Google Fonts.
+  - Sidebar de navegación izquierda con los módulos del sistema.
+  - Layout: grids CSS con columnas responsivas.
+  - Usar Plotly.js para la curva de equity:
+    CDN https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js
+  - Usar Chart.js para histograma y drawdown:
+    CDN https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js
+  - Datos completamente simulados con JavaScript (sin API real).
+  - Código en un solo archivo HTML autocontenido.
+  - Comentarios en español.
+  - Diseño responsivo para desktop (1920x1080) y mobile (375x812).
+  - Incluir template plotly_white para los gráficos de Plotly.
+</restricciones>
+<formato_salida>
+  Archivo HTML completo con todos los gráficos interactivos visibles
+  simultáneamente. Los datos deben regenerarse al cambiar de estrategia
+  o al hacer clic en el botón Ejecutar. El archivo debe funcionar
+  directamente en el navegador sin dependencias locales adicionales.
+  Todos los números mostrados deben estar correctamente formateados
+  (2 decimales para porcentajes, separadores de miles para moneda).
+</formato_salida>

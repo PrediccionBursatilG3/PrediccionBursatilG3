@@ -1,0 +1,33 @@
+<contexto>
+Estás desarrollando el dashboard principal de un Sistema de Predicción Bursátil
+Inteligente que consume datos OHLCV (Open, High, Low, Close, Volume, Adj Close)
+de Yahoo Finance vía yfinance, y datos de criptomonedas de CoinMarketCap.
+Los usuarios son Traders y Analistas Financieros que necesitan visualizar
+datos de mercado en tiempo real con indicadores técnicos.
+</contexto>
+<tarea>
+Genera un componente HTML con JavaScript y la librería Plotly.js (CDN) que
+implemente:
+1. Gráfico de VELAS JAPONESAS (Candlestick) con datos simulados de AAPL
+para 90 días. Incluir rangeslider para selección de período.
+2. Pestañas diferenciadas: 'Acciones' y 'Criptomonedas'.
+3. Selector dropdown de ticker (AAPL, MSFT, GOOGL, TSLA, NVDA, BTC-USD,
+ETH-USD) y selector de período (1M, 3M, 6M, 1A, 2A, 5A).
+4. Indicadores técnicos superpuestos: SMA 20, SMA 50, EMA 12.
+5. Sub-gráfico de volumen con barras verdes (alcista) y rojas (bajista).
+6. Panel lateral derecho con datos en tiempo real: precio, variación %,
+volumen, market cap (para cripto).
+</tarea>
+<restricciones>
+- Usar datos simulados realistas generados con JavaScript (no API real).
+- Paleta: fondo blanco, velas alcistas #26A69A, bajistas #EF5350.
+- Layout responsivo tipo grid de 12 columnas.
+- Importar Plotly.js desde CDN: https://cdn.plot.ly/plotly-latest.min.js
+- Archivo HTML único autocontenido.
+- Comentarios en español.
+</restricciones>
+<formato_salida>
+Archivo HTML completo con Plotly.js integrado via CDN. Incluir datos
+simulados de precios OHLCV realistas para AAPL. El dashboard debe ser
+interactivo con zoom, pan y hover tooltips de Plotly.
+</formato_salida>

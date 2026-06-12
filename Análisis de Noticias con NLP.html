@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Sentimiento Financiero | NLP VADER & GPT-4o</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Estilos personalizados para la barra de desplazamiento del feed */
+        .scrollbar-hide::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-hide::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        .scrollbar-hide::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .scrollbar-hide::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-indigo-900 text-white p-4 shadow-md flex justify-between items-center z-10">
+        <h1 class="text-xl font-bold"><i class="fa-solid fa-brain mr-2"></i> Monitor de Sentimiento de Mercado (VADER + GPT-4o)</h1>
+        <div class="text-sm bg-indigo-800 px-3 py-1 rounded-full border border-indigo-700">
+            Actualizado: <span id="current-time"></span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-4 gap-4">
+
+        <aside class="w-full md:w-2/5 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-hide">
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-semibold mb-3 border-b pb-2"><i class="fa-solid fa-filter text-slate-500 mr-2"></i>Filtros de Búsqueda</h2>
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Ticker / Símbolo</label>
+                        <input type="text" placeholder="Ej. AAPL, TSLA..." class="w-full text-sm p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Inicio</label>
+                            <input type="date" class="w-full text-sm p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Fecha Fin</label>
+                            <input type="date" class="w-full text-sm p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <button class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded transition-colors">
+                        Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center">
+                <h2 class="text-lg font-semibold mb-2 self-start w-full border-b pb-2"><i class="fa-solid fa-gauge-high text-slate-500 mr-2"></i>Sentimiento Agregado</h2>
+                <div class="relative w-full max-w-[250px] aspect-[2/1] mt-4">
+                    <canvas id="gaugeChart"></canvas>
+                    <div class="absolute bottom-0 w-full text-center">
+                        <p id="gauge-score" class="text-3xl font-bold text-slate-700">0.00</p>
+                        <p id="gauge-label" class="text-sm font-medium text-slate-500">Calculando...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2"><i class="fa-solid fa-chart-bar text-slate-500 mr-2"></i>Distribución del Día</h2>
+                <div class="relative h-48 w-full">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+        </aside>
+
+        <section class="w-full md:w-3/5 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <h2 class="text-lg font-semibold"><i class="fa-regular fa-newspaper text-slate-500 mr-2"></i>Feed de Noticias en Tiempo Real</h2>
+                <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded">15 Resultados</span>
+            </div>
+            
+            <div id="news-feed" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-slate-100/50">
+                </div>
+        </section>
+
+    </main>
+
+    <script>
+        // 1. Simulación de 15 noticias financieras en español
+        const newsData = [
+            { id: 1, ticker: 'AAPL', titulo: 'Apple supera estimaciones de ingresos por fuertes ventas del iPhone', fuente: 'Bloomberg News', fecha: '2026-06-08T09:30:00', texto: 'La compañía reportó ingresos récord en el trimestre, impulsados por la demanda sostenida de sus nuevos modelos de iPhone y el crecimiento en el sector servicios.', compound: 0.82 },
+            { id: 2, ticker: 'TSLA', titulo: 'Tesla cae 5% tras retrasos en la nueva gigafábrica de México', fuente: 'Reuters Financial', fecha: '2026-06-08T10:15:00', texto: 'Los inversores reaccionaron negativamente ante el anuncio de Elon Musk sobre nuevos problemas logísticos que retrasarán la producción masiva.', compound: -0.65 },
+            { id: 3, ticker: 'MACRO', titulo: 'La Reserva Federal mantiene los tipos de interés sin cambios', fuente: 'Wall Street Journal', fecha: '2026-06-08T11:00:00', texto: 'Jerome Powell anunció que el comité ha decidido mantener las tasas estables mientras evalúan los últimos datos de inflación subyacente.', compound: 0.02 },
+            { id: 4, ticker: 'NVDA', titulo: 'Nvidia anuncia nuevo chip especializado en inferencia de IA', fuente: 'TechCrunch Finanzas', fecha: '2026-06-08T11:45:00', texto: 'El nuevo hardware promete reducir los costos de energía en un 40% para los centros de datos, consolidando su liderazgo en el mercado de la IA.', compound: 0.88 },
+            { id: 5, ticker: 'GOOGL', titulo: 'Reguladores europeos abren investigación antimonopolio contra Google', fuente: 'Financial Times', fecha: '2026-06-08T12:20:00', texto: 'La Unión Europea escrutará las prácticas publicitarias de Alphabet, citando preocupaciones sobre el abuso de su posición dominante en el mercado.', compound: -0.58 },
+            { id: 6, ticker: 'AMZN', titulo: 'Amazon AWS firma contrato multimillonario con el gobierno británico', fuente: 'CNBC', fecha: '2026-06-08T13:05:00', texto: 'El acuerdo asegura una fuente constante de ingresos gubernamentales para la división en la nube de Amazon durante los próximos cinco años.', compound: 0.75 },
+            { id: 7, ticker: 'INTC', titulo: 'Intel recorta previsiones de ventas para el tercer trimestre', fuente: 'MarketWatch', fecha: '2026-06-08T13:30:00', texto: 'La debilidad persistente en el mercado de PC ha llevado a la empresa a ajustar a la baja sus expectativas, preocupando a los analistas.', compound: -0.72 },
+            { id: 8, ticker: 'SPY', titulo: 'El índice S&P 500 cierra la jornada matutina con leves movimientos', fuente: 'Yahoo Finance', fecha: '2026-06-08T14:00:00', texto: 'Mercado plano con bajo volumen de operaciones ante la expectativa de los datos de empleo que se publicarán el próximo viernes.', compound: -0.01 },
+            { id: 9, ticker: 'MSFT', titulo: 'Microsoft integra GPT-5 en toda la suite de Office 365', fuente: 'The Verge', fecha: '2026-06-08T14:25:00', texto: 'La adopción masiva de su nuevo asistente copilot proyecta un incremento significativo en las suscripciones premium empresariales.', compound: 0.68 },
+            { id: 10, ticker: 'BA', titulo: 'Boeing enfrenta nueva huelga de trabajadores en Seattle', fuente: 'Reuters', fecha: '2026-06-08T14:50:00', texto: 'Las negociaciones sindicales fracasaron, amenazando con detener la producción de aviones comerciales clave durante semanas.', compound: -0.85 },
+            { id: 11, ticker: 'META', titulo: 'Meta implementa cambios de privacidad en Europa', fuente: 'Bloomberg', fecha: '2026-06-08T15:10:00', texto: 'La red social actualiza sus políticas de datos para cumplir con la nueva ley de mercados digitales, sin un impacto claro en los ingresos aún.', compound: 0.04 },
+            { id: 12, ticker: 'NFLX', titulo: 'Netflix supera los 300 millones de suscriptores globales', fuente: 'Variety Business', fecha: '2026-06-08T15:35:00', texto: 'Las medidas contra las contraseñas compartidas continúan dando frutos, sumando más usuarios de los proyectados en América Latina.', compound: 0.70 },
+            { id: 13, ticker: 'BAC', titulo: 'Bank of America advierte sobre aumento de morosidad en tarjetas de crédito', fuente: 'WSJ', fecha: '2026-06-08T16:00:00', texto: 'El banco señala que los consumidores están sintiendo la presión de las altas tasas, lo que podría afectar las ganancias del próximo semestre.', compound: -0.45 },
+            { id: 14, ticker: 'JPM', titulo: 'JPMorgan reestructura su división de banca de inversión', fuente: 'Financial Times', fecha: '2026-06-08T16:20:00', texto: 'Movimientos corporativos internos enfocados en optimizar la estructura de liderazgo tras la jubilación de dos altos ejecutivos.', compound: -0.03 },
+            { id: 15, ticker: 'AMD', titulo: 'Analistas suben el precio objetivo de AMD por fuerte demanda', fuente: 'Barron\'s', fecha: '2026-06-08T16:45:00', texto: 'Diversas firmas de Wall Street ven un potencial de subida del 20% para la empresa debido a su creciente cuota de mercado en servidores.', compound: 0.62 }
+        ];
+
+        // 2. Funciones Auxiliares de Sentimiento
+        function getSentimentCategory(compound) {
+            if (compound >= 0.05) return 'BULLISH';
+            if (compound <= -0.05) return 'BEARISH';
+            return 'NEUTRAL';
+        }
+
+        function getSentimentStyle(category) {
+            switch(category) {
+                case 'BULLISH': return { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-500', icon: 'fa-arrow-trend-up' };
+                case 'BEARISH': return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-500', icon: 'fa-arrow-trend-down' };
+                default: return { color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-400', icon: 'fa-minus' };
+            }
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // 3. Renderizar Feed de Noticias
+        const newsFeedContainer = document.getElementById('news-feed');
+        
+        let stats = { bullish: 0, bearish: 0, neutral: 0, totalScore: 0 };
+
+        newsData.forEach(news => {
+            const category = getSentimentCategory(news.compound);
+            const style = getSentimentStyle(category);
+            
+            // Actualizar estadísticas para gráficos
+            if(category === 'BULLISH') stats.bullish++;
+            else if(category === 'BEARISH') stats.bearish++;
+            else stats.neutral++;
+            stats.totalScore += news.compound;
+
+            // Crear tarjeta HTML
+            const card = document.createElement('div');
+            card.className = `bg-white p-4 rounded-lg shadow-sm border-l-4 border border-slate-200 ${style.border} hover:shadow-md transition-shadow`;
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">${news.ticker}</span>
+                        <span class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${formatTime(news.fecha)} | ${news.fuente}</span>
+                    </div>
+                    <div class="flex items-center gap-1 px-2 py-1 rounded ${style.bg} ${style.color}">
+                        <i class="fa-solid ${style.icon} text-sm"></i>
+                        <span class="text-xs font-bold">${category} (${news.compound.toFixed(2)})</span>
+                    </div>
+                </div>
+                <h3 class="text-md font-bold text-slate-800 mb-1 leading-tight">${news.titulo}</h3>
+                <p class="text-sm text-slate-600 line-clamp-2">${news.texto}</p>
+            `;
+            newsFeedContainer.appendChild(card);
+        });
+
+        // 4. Calcular Valores Agregados
+        const avgScore = stats.totalScore / newsData.length;
+        const avgCategory = getSentimentCategory(avgScore);
+        const avgStyle = getSentimentStyle(avgCategory);
+
+        // Actualizar UI del velocímetro
+        document.getElementById('gauge-score').textContent = avgScore.toFixed(2);
+        document.getElementById('gauge-score').className = `text-3xl font-bold ${avgStyle.color}`;
+        document.getElementById('gauge-label').textContent = `Mercado ${avgCategory}`;
+        
+        // Reloj en el header
+        document.getElementById('current-time').textContent = new Date('2026-06-08T17:10:42').toLocaleTimeString('es-ES');
+
+        // 5. Gráfico de Distribución (Barras Horizontales)
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['BULLISH', 'NEUTRAL', 'BEARISH'],
+                datasets: [{
+                    label: 'Cantidad de Noticias',
+                    data: [stats.bullish, stats.neutral, stats.bearish],
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)', // Verde
+                        'rgba(148, 163, 184, 0.8)', // Gris
+                        'rgba(239, 68, 68, 0.8)'    // Rojo
+                    ],
+                    borderColor: [
+                        'rgb(21, 128, 61)',
+                        'rgb(71, 85, 105)',
+                        'rgb(185, 28, 28)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Hace las barras horizontales
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+
+        // 6. Gráfico Gauge (Velocímetro simulado con Doughnut)
+        const ctxGauge = document.getElementById('gaugeChart').getContext('2d');
+        
+        // Mapear el rango de -1 a 1 a un valor angular (0 a 100 para proporciones del gauge)
+        // -1 = 100% Izquierda (Rojo), 0 = Centro (Gris), 1 = 100% Derecha (Verde)
+        const normalizedScore = ((avgScore + 1) / 2) * 100; // de 0 a 100
+
+        // Plugin personalizado para dibujar la aguja del velocímetro
+        const gaugeNeedle = {
+            id: 'gaugeNeedle',
+            afterDatasetDraw(chart, args, options) {
+                const { ctx, config, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                ctx.save();
+                
+                // Calcular la posición de la aguja
+                const needleValue = config._config.data.datasets[0].needleValue;
+                const dataTotal = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const angle = Math.PI + (1 / dataTotal * needleValue * Math.PI);
+                
+                const cx = width / 2;
+                const cy = chart._metasets[0].data[0].y; // Punto base del semicírculo
+
+                // Dibujar la aguja
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(0, -2);
+                ctx.lineTo(height - (ctx.canvas.offsetTop + 20), 0);
+                ctx.lineTo(0, 2);
+                ctx.fillStyle = '#334155'; // Color de aguja (slate-700)
+                ctx.fill();
+                
+                // Punto base de la aguja
+                ctx.translate(-cx, -cy);
+                ctx.beginPath();
+                ctx.arc(cx, cy, 6, 0, 10 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+            }
+        };
+
+        new Chart(ctxGauge, {
+            type: 'doughnut',
+            data: {
+                labels: ['Bearish', 'Neutral', 'Bullish'],
+                datasets: [{
+                    data: [33.3, 33.3, 33.3], // Segmentos visuales iguales para el fondo
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.7)',  // Zona Roja
+                        'rgba(203, 213, 225, 0.7)', // Zona Gris
+                        'rgba(34, 197, 94, 0.7)'    // Zona Verde
+                    ],
+                    borderWidth: 0,
+                    needleValue: normalizedScore // Inyectamos el valor para la aguja
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                rotation: 270, // Inicia a la izquierda
+                circumference: 180, // Medio círculo
+                cutout: '75%', // Grosor del arco
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            },
+            plugins: [gaugeNeedle]
+        });
+    </script>
+</body>
+</html>

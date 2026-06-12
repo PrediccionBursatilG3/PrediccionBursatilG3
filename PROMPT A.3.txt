@@ -1,0 +1,28 @@
+<contexto>
+Modulo de clasificacion de tendencia bursatil. El modelo SVC (Support Vector
+Classifier) clasifica cada dia en BUY (clase 1), SELL (clase 2) o HOLD
+(clase 0), usando ventanas de 60 dias de precios normalizados. El SVC usa
+kernel RBF con C=1.0, gamma='scale' y probability=True.
+</contexto>
+<tarea>
+Genera una interfaz HTML + CSS + JavaScript que muestre:
+1. Grafico de linea de precios con marcadores triangulares: verdes (BUY)
+apuntando arriba, rojos (SELL) apuntando abajo, grises (HOLD).
+2. Panel de metricas: Accuracy (%), F1-Score, Precision, Recall del SVC.
+3. Matriz de confusion 3x3 visual (BUY/SELL/HOLD) con colores de calor.
+4. Selector de ticker para cambiar el activo analizado.
+5. Indicador tipo semaforo: BUY (verde), SELL (rojo), HOLD (amarillo).
+</tarea>
+<restricciones>
+
+iDeSo — UNMSM — FISI | Especificaciones Trabajo Sem. 10 — Diseño GUI con IA Generativa
+
+Prof. E. D. Cancho-Rodríguez, MBA (GWU) — 26.06.06.V3_Especificaciones_Trabajo_Sem10_GUI_iDeSo.docx | Página 18 / 22
+- Usar datos simulados con distribucion realista de clases.
+- Usar Chart.js o Plotly.js via CDN.
+- Archivo HTML unico autocontenido.
+- Comentarios en espanol.
+</restricciones>
+<formato_salida>
+Archivo HTML completo y funcional con graficos interactivos.
+</formato_salida>

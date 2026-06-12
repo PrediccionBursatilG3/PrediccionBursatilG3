@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reportes de Backtesting — SPBI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1F3864;
+    --gold: #C5961A;
+    --bg: #F4F6FB;
+    --white: #FFFFFF;
+    --sidebar: #1A2E58;
+    --text: #1E2A3B;
+    --muted: #7B8CA0;
+    --border: #E2E8F0;
+    --up: #16A34A;
+    --down: #DC2626;
+    --hold: #D97706;
+    --up-bg: #DCFCE7;
+    --down-bg: #FEE2E2;
+    --hold-bg: #FEF3C7;
+  }
+
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* Sidebar */
+  .sidebar { width: 210px; background: var(--sidebar); display: flex; flex-direction: column; padding: 1.25rem 0; flex-shrink: 0; }
+  .sidebar-logo { padding: 0 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 32px; height: 32px; background: var(--gold); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: #fff; }
+  .logo-text em { font-style: normal; color: var(--gold); }
+  .nav-section { padding: 0 0.6rem; margin-bottom: 0.4rem; }
+  .nav-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 1px; padding: 0 0.4rem; margin-bottom: 0.4rem; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; margin-bottom: 1px; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .nav-item.active { background: rgba(197,150,26,0.2); color: var(--gold); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+  /* Topbar */
+  .topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-shrink: 0; }
+  .page-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--navy); }
+  .topbar-controls { display: flex; align-items: center; gap: 8px; }
+  select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text); background: var(--white); outline: none; cursor: pointer; }
+  .btn { padding: 6px 14px; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-navy { background: var(--navy); color: #fff; }
+  .btn-export { background: var(--white); border: 1px solid var(--border); color: var(--text); }
+
+  /* Content */
+  .content { flex: 1; padding: 1rem 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+  .kpi-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--navy); }
+  .kpi-sub { font-size: 11px; margin-top: 3px; font-weight: 500; }
+  .green { color: var(--up); } .red { color: var(--down); } .amber { color: var(--hold); }
+
+  /* Extra KPI row */
+  .kpi-grid2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; }
+
+  /* Cards */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+  .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+
+  /* Charts row */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+  .charts-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  /* Progress bar metric */
+  .metric-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .metric-bar-label { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .metric-bar-bg { flex: 1; height: 7px; background: var(--bg); border-radius: 4px; }
+  .metric-bar-fill { height: 7px; border-radius: 4px; }
+  .metric-bar-val { font-size: 12px; font-weight: 600; width: 50px; text-align: right; }
+
+  /* Trades table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { border-bottom: 1.5px solid var(--border); }
+  th { text-align: left; padding: 7px 8px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .badge-win { background: var(--up-bg); color: var(--up); }
+  .badge-loss { background: var(--down-bg); color: var(--down); }
+  .badge-buy { background: #EFF6FF; color: #1D4ED8; }
+  .badge-sell { background: #FFF7ED; color: #C2410C; }
+
+  .strategy-tabs { display: flex; gap: 6px; }
+  .strat-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer; background: var(--white); color: var(--muted); transition: all 0.15s; }
+  .strat-tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .kpi-grid, .kpi-grid2 { grid-template-columns: repeat(2, 1fr); }
+    .charts-row, .charts-row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M3 17l4-8 4 4 3-6 4 10H3z"/><path d="M2 20h20"/></svg></div>
+    <span class="logo-text">Invest<em>AI</em></span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item"><div class="nav-dot"></div> Dashboard</div>
+    <div class="nav-item"><div class="nav-dot"></div> Mercado</div>
+    <div class="nav-item"><div class="nav-dot"></div> Predicciones</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Estrategias</div>
+    <div class="nav-item"><div class="nav-dot"></div> Estrategias</div>
+    <div class="nav-item"><div class="nav-dot"></div> Portafolio</div>
+    <div class="nav-item active"><div class="nav-dot"></div> Backtesting</div>
+  </div>
+  <div class="nav-section" style="margin-top:auto;">
+    <div class="nav-label">Operaciones</div>
+    <div class="nav-item"><div class="nav-dot"></div> Broker / Órdenes</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="page-title">Reportes de Backtesting — VectorBT</span>
+      <div class="strategy-tabs">
+        <div class="strat-tab active" onclick="selectStrat(this,'BUY/SELL Simple')">BUY/SELL Simple</div>
+        <div class="strat-tab" onclick="selectStrat(this,'Covered Call')">Covered Call</div>
+        <div class="strat-tab" onclick="selectStrat(this,'Iron Condor')">Iron Condor</div>
+      </div>
+    </div>
+    <div class="topbar-controls">
+      <select id="ticker-bt"><option>AAPL</option><option>MSFT</option><option>NVDA</option><option>TSLA</option></select>
+      <select id="period-bt"><option>6M</option><option>1M</option><option>3M</option><option>1A</option></select>
+      <button class="btn btn-navy" onclick="renderAll()">▶ Ejecutar</button>
+      <button class="btn btn-export">↓ PDF</button>
+      <button class="btn btn-export">↓ CSV</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI row 1 -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Retorno Total</div>
+        <div class="kpi-value green" id="kpi-ret">+24.7%</div>
+        <div class="kpi-sub green">vs Buy&Hold +18.2%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Retorno Anualizado</div>
+        <div class="kpi-value green" id="kpi-ann">+49.4%</div>
+        <div class="kpi-sub">Proyectado a 12 meses</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value green" id="kpi-wr">64.2%</div>
+        <div class="kpi-sub">31 ganadas / 17 perdidas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Profit Factor</div>
+        <div class="kpi-value green" id="kpi-pf">2.18</div>
+        <div class="kpi-sub green">Ganancias / Pérdidas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Operaciones</div>
+        <div class="kpi-value" id="kpi-trades">48</div>
+        <div class="kpi-sub">Período de 6 meses</div>
+      </div>
+    </div>
+
+    <!-- KPI row 2 -->
+    <div class="kpi-grid2">
+      <div class="kpi-card">
+        <div class="kpi-label">Sharpe Ratio</div>
+        <div class="kpi-value" id="kpi-sharpe">1.84</div>
+        <div class="kpi-sub green">Excelente (> 1.5)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Sortino Ratio</div>
+        <div class="kpi-value" id="kpi-sortino">2.31</div>
+        <div class="kpi-sub green">Muy bueno</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Calmar Ratio</div>
+        <div class="kpi-value" id="kpi-calmar">2.97</div>
+        <div class="kpi-sub green">Alto rendimiento/riesgo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Máximo Drawdown</div>
+        <div class="kpi-value red" id="kpi-dd">-8.3%</div>
+        <div class="kpi-sub amber">Moderado — controlado</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Exposición al Mercado</div>
+        <div class="kpi-value" id="kpi-exp">71.4%</div>
+        <div class="kpi-sub">Del período total</div>
+      </div>
+    </div>
+
+    <!-- Curva de equity + drawdown -->
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-title">
+          Curva de Equity
+          <div style="display:flex;gap:10px;font-size:11px;font-weight:400;color:var(--muted);">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:3px;background:var(--navy);display:inline-block;border-radius:2px;"></span>Estrategia</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:3px;background:var(--muted);display:inline-block;border-radius:2px;border-bottom:1px dashed;"></span>Buy & Hold</span>
+          </div>
+        </div>
+        <div id="equity-chart" style="height:220px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Métricas de Riesgo</div>
+        <div style="margin-top:0.5rem;">
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Win Rate</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:64%;background:var(--up);"></div></div>
+            <span class="metric-bar-val green">64.2%</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Profit Factor</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:73%;background:var(--up);"></div></div>
+            <span class="metric-bar-val green">2.18</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Sharpe</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:61%;background:var(--navy);"></div></div>
+            <span class="metric-bar-val">1.84</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Sortino</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:77%;background:var(--navy);"></div></div>
+            <span class="metric-bar-val">2.31</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Max Drawdown</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:28%;background:var(--down);"></div></div>
+            <span class="metric-bar-val red">-8.3%</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Exposición</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:71%;background:var(--gold);"></div></div>
+            <span class="metric-bar-val amber">71.4%</span>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);margin-top:0.75rem;padding-top:0.75rem;">
+          <div class="card-title" style="margin-bottom:0.5rem;">Configuración</div>
+          <div style="font-size:11px;display:flex;flex-direction:column;gap:4px;color:var(--muted);">
+            <div style="display:flex;justify-content:space-between;"><span>Capital inicial</span><span style="color:var(--text);font-weight:500;">$100,000</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Comisión</span><span style="color:var(--text);font-weight:500;">0.10% / op.</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Slippage</span><span style="color:var(--text);font-weight:500;">0.05%</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Período</span><span style="color:var(--text);font-weight:500;">6 meses</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histograma + Drawdown -->
+    <div class="charts-row2">
+      <div class="card">
+        <div class="card-title">Histograma de Retornos por Operación</div>
+        <canvas id="hist-chart" height="160"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">Curva de Drawdown</div>
+        <canvas id="dd-chart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabla de trades -->
+    <div class="card">
+      <div class="card-title">
+        Registro de Operaciones Ejecutadas
+        <span style="font-size:11px;font-weight:400;color:var(--muted);">Últimas 10 de 48 operaciones</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha Entrada</th>
+            <th>Fecha Salida</th>
+            <th>Ticker</th>
+            <th>Tipo</th>
+            <th>Precio Entrada</th>
+            <th>Precio Salida</th>
+            <th>Cantidad</th>
+            <th>P&L ($)</th>
+            <th>P&L (%)</th>
+            <th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="trades-table"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Comentario: Datos simulados de operaciones para el reporte
+  const tradesData = [
+    { entry: '2024-06-10', exit: '2024-06-18', ticker: 'AAPL', type: 'BUY', ep: 182.50, xp: 191.20, qty: 15 },
+    { entry: '2024-06-20', exit: '2024-06-28', ticker: 'NVDA', type: 'BUY', ep: 860.00, xp: 891.50, qty: 5 },
+    { entry: '2024-07-02', exit: '2024-07-10', ticker: 'MSFT', type: 'SELL', ep: 420.00, xp: 408.30, qty: 10 },
+    { entry: '2024-07-15', exit: '2024-07-22', ticker: 'TSLA', type: 'BUY', ep: 245.00, xp: 238.50, qty: 8 },
+    { entry: '2024-07-25', exit: '2024-08-01', ticker: 'AAPL', type: 'BUY', ep: 188.00, xp: 196.40, qty: 20 },
+    { entry: '2024-08-05', exit: '2024-08-12', ticker: 'GOOGL', type: 'BUY', ep: 172.00, xp: 179.80, qty: 12 },
+    { entry: '2024-08-15', exit: '2024-08-22', ticker: 'NVDA', type: 'SELL', ep: 880.00, xp: 865.20, qty: 4 },
+    { entry: '2024-08-26', exit: '2024-09-03', ticker: 'TSLA', type: 'BUY', ep: 240.00, xp: 255.60, qty: 10 },
+    { entry: '2024-09-06', exit: '2024-09-13', ticker: 'MSFT', type: 'BUY', ep: 408.00, xp: 403.20, qty: 7 },
+    { entry: '2024-09-18', exit: '2024-09-26', ticker: 'AAPL', type: 'BUY', ep: 190.00, xp: 198.50, qty: 18 },
+  ];
+
+  // Comentario: Renderizar tabla de trades
+  function renderTrades() {
+    const tbody = document.getElementById('trades-table');
+    tbody.innerHTML = tradesData.map((t, i) => {
+      const pnl = ((t.xp - t.ep) * (t.type === 'SELL' ? -1 : 1) * t.qty).toFixed(2);
+      const pnlPct = (((t.xp - t.ep) / t.ep) * (t.type === 'SELL' ? -1 : 1) * 100).toFixed(2);
+      const win = parseFloat(pnl) > 0;
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${t.entry}</td>
+        <td>${t.exit}</td>
+        <td><strong>${t.ticker}</strong></td>
+        <td><span class="badge badge-${t.type.toLowerCase()}">${t.type}</span></td>
+        <td>$${t.ep.toFixed(2)}</td>
+        <td>$${t.xp.toFixed(2)}</td>
+        <td>${t.qty}</td>
+        <td style="color:${win ? 'var(--up)' : 'var(--down)'}; font-weight:600;">${win ? '+' : ''}$${pnl}</td>
+        <td style="color:${win ? 'var(--up)' : 'var(--down)'}; font-weight:600;">${win ? '+' : ''}${pnlPct}%</td>
+        <td><span class="badge ${win ? 'badge-win' : 'badge-loss'}">${win ? 'Win' : 'Loss'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  let histChart, ddChart;
+
+  // Comentario: Renderizar curva de equity con Plotly
+  function renderEquity() {
+    const labels = [], strat = [], bh = [];
+    let sv = 100000, bhv = 100000;
+    const now = new Date('2024-09-30');
+    for (let i = 180; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      labels.push(d.toISOString().split('T')[0]);
+      sv *= (1 + (Math.random() - 0.44) * 0.013);
+      bhv *= (1 + (Math.random() - 0.47) * 0.011);
+      strat.push(+sv.toFixed(0));
+      bh.push(+bhv.toFixed(0));
+    }
+
+    Plotly.newPlot('equity-chart', [
+      { x: labels, y: strat, name: 'Estrategia', type: 'scatter', mode: 'lines', line: { color: '#1F3864', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(31,56,100,0.06)' },
+      { x: labels, y: bh, name: 'Buy & Hold', type: 'scatter', mode: 'lines', line: { color: '#94A3B8', width: 1.5, dash: 'dash' } }
+    ], {
+      template: 'plotly_white', paper_bgcolor: 'white', plot_bgcolor: 'white',
+      margin: { t: 5, r: 5, b: 30, l: 65 },
+      xaxis: { showgrid: false, tickfont: { size: 10 } },
+      yaxis: { gridcolor: '#F0F2F5', tickprefix: '$', tickfont: { size: 10 }, tickformat: ',.0f' },
+      legend: { x: 0, y: 1.1, orientation: 'h', font: { size: 10 } },
+      font: { family: 'Inter', size: 10, color: '#1E2A3B' }, height: 220
+    }, { responsive: true, displayModeBar: false });
+  }
+
+  // Comentario: Renderizar histograma de retornos
+  function renderHist() {
+    const returns = Array.from({ length: 300 }, () => (Math.random() - 0.42) * 8);
+    const bins = Array.from({ length: 22 }, (_, i) => -11 + i);
+    const counts = bins.map(b => returns.filter(r => r >= b && r < b + 1).length);
+    const colors = bins.map(b => b >= 0 ? 'rgba(22,163,74,0.7)' : 'rgba(220,38,38,0.7)');
+
+    if (histChart) histChart.destroy();
+    histChart = new Chart(document.getElementById('hist-chart'), {
+      type: 'bar',
+      data: { labels: bins.map(b => b.toFixed(0) + '%'), datasets: [{ data: counts, backgroundColor: colors, borderRadius: 3, borderSkipped: false }] },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 9 } } },
+          y: { grid: { color: '#F0F2F5' }, ticks: { font: { size: 9 } }, title: { display: true, text: 'Frecuencia', font: { size: 9 } } }
+        }
+      }
+    });
+  }
+
+  // Comentario: Renderizar curva de drawdown
+  function renderDD() {
+    const labels = [], dd = [];
+    let peak = 100000, val = 100000;
+    const now = new Date('2024-09-30');
+    for (let i = 180; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      val *= (1 + (Math.random() - 0.44) * 0.013);
+      if (val > peak) peak = val;
+      const drawdown = ((val - peak) / peak * 100);
+      labels.push(d.toISOString().split('T')[0]);
+      dd.push(+drawdown.toFixed(2));
+    }
+
+    if (ddChart) ddChart.destroy();
+    ddChart = new Chart(document.getElementById('dd-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Drawdown (%)',
+          data: dd,
+          borderColor: '#DC2626',
+          backgroundColor: 'rgba(220,38,38,0.08)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 9 } } },
+          y: { grid: { color: '#F0F2F5' }, ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } } }
+        }
+      }
+    });
+  }
+
+  // Comentario: Cambiar estrategia activa
+  function selectStrat(el, name) {
+    document.querySelectorAll('.strat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderAll();
+  }
+
+  // Comentario: Renderizar todo el dashboard
+  function renderAll() {
+    renderEquity();
+    renderHist();
+    renderDD();
+    renderTrades();
+  }
+
+  renderAll();
+</script>
+</body>
+</html>

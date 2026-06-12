@@ -1,0 +1,47 @@
+<contexto>
+
+Modulo NLP del sistema. VADER SentimentIntensityAnalyzer analiza noticias
+
+financieras y clasifica el sentimiento como BULLISH (compound >= 0.05),
+
+BEARISH (compound <= -0.05) o NEUTRAL. Tambien se integra el LLM GPT-4o
+
+como clasificador complementario via OpenAI API.
+
+</contexto>
+
+<tarea>
+
+Genera una interfaz HTML que muestre:
+
+1. Feed de noticias financieras (simuladas) con tarjetas que incluyan:
+
+titulo, fuente, fecha, texto resumido, y puntuacion de sentimiento.
+
+2. Cada tarjeta con indicador visual: icono y color segun sentimiento
+
+(BULLISH verde, BEARISH rojo, NEUTRAL gris).
+
+3. Grafico de barras horizontales: distribucion de sentimiento del dia.
+
+4. Panel de 'Sentimiento Agregado del Mercado' con gauge tipo velocimetro.
+
+5. Filtro por ticker y por rango de fechas.
+
+</tarea>
+
+<restricciones>
+
+- Simular 15 noticias financieras realistas en espanol.
+
+- HTML unico autocontenido con Chart.js via CDN.
+
+- Comentarios en espanol.
+
+</restricciones>
+
+<formato_salida>
+
+Archivo HTML con feed de noticias y visualizaciones de sentimiento.
+
+</formato_salida>

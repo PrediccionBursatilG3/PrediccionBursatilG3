@@ -1,0 +1,29 @@
+<contexto>
+
+Interfaz de activación/desactivación de los 16 modelos IA y configuración de sus hiperparámetros. RF relacionados: RF-05 a RF-16 (todos los modelos del Core de IA).
+
+</contexto>
+
+<tarea>
+
+Genera un panel lateral HTML con checkboxes para seleccionar modelos IA activos (12-16) que cuente con acordeones con hiperparámetros configurables por modelo. Debe haber un botón de ejecución de análisis y una tabla de métricas en tiempo real con codificación de color.
+
+</tarea>
+
+<restricciones>
+
+-Debe funcionar tanto para pantalla de Pc de escritorio como pantalla de celular móvil.
+
+- HTML unico autocontenido (todo en un solo archivo).
+
+- Comentarios en espanol.
+
+- Responsive, estético, bien estucturado.
+
+</restricciones>
+
+<formato_salida>
+
+Archivo HTML completo con el panel lateral que permite seleccionar modelos IA activos y ajustar sus hiperparámetros, con botón de ejecución de análisis y tabla de métricas en tiempo real responsive para desktop y mobile.
+
+</formato_salida>

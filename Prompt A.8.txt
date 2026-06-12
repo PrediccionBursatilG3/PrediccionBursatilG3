@@ -1,0 +1,26 @@
+<contexto>
+Modulo de ejecucion de ordenes del sistema. Se conecta con Interactive Brokers
+via ib_insync. Tipos de ordenes: MarketOrder, LimitOrder, StopOrder.
+Contrato: Contract(symbol='AAPL', secType='STK', exchange='SMART',
+currency='USD'). Confirmacion requiere status='Filled'.
+</contexto>
+<tarea>
+Genera una interfaz HTML que incluya:
+1. Formulario de orden: dropdown de ticker, tipo de orden (Market/Limit/
+Stop), cantidad (input numerico), precio limite (si aplica).
+2. Panel de vista previa de orden con calculo de comision y costo total.
+3. Indicador de estado de conexion con Interactive Brokers (conectado/
+desconectado/modo papel) con icono de semaforo.
+4. Boton 'Confirmar Orden' con modal de doble verificacion.
+5. Historial de ordenes recientes en tabla con: hora, ticker, tipo, cantidad,
+precio, estado (Filled/Pending/Cancelled).
+6. Alerta visual si se opera en modo Paper Trading.
+</tarea>
+<restricciones>
+- HTML unico autocontenido.
+- Paleta financiera profesional: fondo blanco, acentos azul oscuro.
+- Comentarios en espanol.
+</restricciones>
+<formato_salida>
+Archivo HTML completo con formularios de ordenes y confirmaciones.
+</formato_salida>

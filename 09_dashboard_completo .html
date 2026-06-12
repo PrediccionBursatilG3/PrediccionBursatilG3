@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPBI — Dashboard Principal</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  /* ═══════════════════════════════════════════════
+     SPBI · Dashboard Principal de Resultados
+     RF-SAL-01: Dashboards y Reportes de Pronósticos
+     RF-SAL-02: Presentación de Recomendaciones de Inversión
+     Grupo 10 · UNMSM · iDeSo 2026-II
+  ═══════════════════════════════════════════════ */
+  :root {
+    --azul:    #1F3864;
+    --azul2:   #2E5FAC;
+    --dorado:  #C5961A;
+    --blanco:  #FFFFFF;
+    --gris-bg: #F0F4FA;
+    --gris-b:  #8A93A6;
+    --gris-bd: #E0E8F4;
+    --verde:   #198754;
+    --rojo:    #DC3545;
+    --amarillo:#E0A800;
+    --marron:  #800000;
+    --sombra:  0 2px 12px rgba(31,56,100,.09);
+  }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--gris-bg); color:#1a1a2e; min-height:100vh; }
+
+  /* ══ NAVBAR ══ */
+  nav {
+    background:linear-gradient(90deg,#0d1e3d,var(--azul));
+    height:58px; padding:0 22px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:300;
+    box-shadow:0 2px 16px rgba(0,0,0,.28);
+  }
+  .nav-left { display:flex; align-items:center; gap:16px; }
+  .nav-brand { color:var(--blanco); font-size:18px; font-weight:800; letter-spacing:.5px; display:flex; align-items:center; gap:10px; }
+  .nav-brand .sigla { color:var(--dorado); }
+  .nav-sep  { width:1px; height:26px; background:rgba(255,255,255,.15); }
+  .nav-sub  { font-size:12px; color:rgba(255,255,255,.55); }
+
+  .nav-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .nav-select {
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    color:var(--blanco); border-radius:8px; padding:6px 12px;
+    font-size:13px; font-family:inherit; cursor:pointer; outline:none;
+  }
+  .nav-select option { background:#1F3864; }
+  .btn-analizar {
+    background:linear-gradient(135deg,var(--dorado),#e8b020);
+    color:var(--azul); border:none; border-radius:8px;
+    padding:7px 16px; font-size:13px; font-weight:800;
+    cursor:pointer; font-family:inherit;
+    box-shadow:0 3px 10px rgba(197,150,26,.4);
+    transition:transform .15s;
+  }
+  .btn-analizar:hover { transform:translateY(-1px); }
+
+  .conn-pill {
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:rgba(255,255,255,.7);
+    background:rgba(255,255,255,.08); border-radius:20px;
+    padding:4px 10px;
+  }
+  .conn-dot { width:7px; height:7px; border-radius:50%; background:#4CAF50; animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  /* ══ LAYOUT PRINCIPAL ══ */
+  .dash {
+    display:grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto auto auto;
+    gap:14px;
+    padding:16px 20px;
+    max-width:1600px; margin:0 auto;
+  }
+
+  /* col-1 row-1: Candlestick */
+  .area-candle  { grid-column:1; grid-row:1; }
+  /* col-2 row-1+2: Panel señal + modelos */
+  .area-panel   { grid-column:2; grid-row:1/3; display:flex; flex-direction:column; gap:12px; }
+  /* col-1 row-2: Métricas de modelos */
+  .area-metrics { grid-column:1; grid-row:2; }
+  /* col-1+2 row-3: Backtesting */
+  .area-bt      { grid-column:1/3; grid-row:3; }
+
+  /* ══ CARD BASE ══ */
+  .card { background:var(--blanco); border-radius:12px; box-shadow:var(--sombra); overflow:hidden; }
+  .card-hdr {
+    padding:13px 18px; border-bottom:1px solid var(--gris-bd);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    font-size:13px; font-weight:700; color:var(--azul);
+  }
+  .badge { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; }
+  .b-live   { background:#FEE2E2; color:var(--rojo); }
+  .b-blue   { background:#EBF3FB; color:var(--azul2); }
+  .b-green  { background:#D4EDDA; color:var(--verde); }
+  .b-gold   { background:#FFF3CD; color:#856404; }
+
+  /* ══ SEÑAL CONSOLIDADA ══ */
+  .signal-box { padding:20px 16px 14px; text-align:center; border-bottom:1px solid var(--gris-bd); }
+  .signal-ring {
+    width:76px; height:76px; border-radius:50%;
+    margin:0 auto 10px;
+    display:flex; align-items:center; justify-content:center; font-size:28px;
+    box-shadow:0 6px 22px rgba(0,0,0,.2);
+    animation:glow 2.5s ease-in-out infinite alternate;
+  }
+  @keyframes glow { from{box-shadow:0 6px 22px rgba(0,0,0,.2)} to{box-shadow:0 8px 32px rgba(0,0,0,.35)} }
+  .ring-buy  { background:radial-gradient(circle,#2ecc9a,var(--verde)); }
+  .ring-sell { background:radial-gradient(circle,#f27474,var(--rojo)); }
+  .ring-hold { background:radial-gradient(circle,#ffd54e,var(--amarillo)); }
+  .signal-lbl { font-size:24px; font-weight:900; letter-spacing:1px; }
+  .t-buy  { color:var(--verde); }
+  .t-sell { color:var(--rojo); }
+  .t-hold { color:var(--amarillo); }
+  .signal-conf { font-size:12px; color:var(--gris-b); margin-top:4px; }
+
+  /* Votos */
+  .votos-grid { padding:12px 16px; display:grid; grid-template-columns:1fr 1fr; gap:6px; border-bottom:1px solid var(--gris-bd); }
+  .voto-item  { text-align:center; padding:8px 4px; background:var(--gris-bg); border-radius:8px; }
+  .voto-num   { font-size:20px; font-weight:800; }
+  .voto-lbl   { font-size:10px; color:var(--gris-b); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+  .vn-buy  { color:var(--verde); }
+  .vn-sell { color:var(--rojo); }
+  .vn-hold { color:var(--amarillo); }
+  .vn-reg  { color:var(--azul2); }
+
+  /* ══ MODELOS ACTIVOS ══ */
+  .models-scroll { max-height:260px; overflow-y:auto; padding:8px 14px; }
+  .model-row {
+    display:flex; align-items:center; gap:7px;
+    padding:6px 4px; border-bottom:1px solid var(--gris-bg);
+    cursor:pointer; border-radius:6px; transition:background .15s;
+  }
+  .model-row:hover { background:#F8FAFF; }
+  .model-row:last-child { border-bottom:none; }
+  .model-row input { accent-color:var(--azul); width:13px; height:13px; }
+  .model-name { font-size:11.5px; font-weight:600; flex:1; color:#333; }
+  .mb { font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:8px; }
+  .mb-clf { background:#E8F5F4; color:var(--verde); }
+  .mb-reg { background:#EBF3FB; color:var(--azul2); }
+  .model-met { font-size:11px; font-weight:700; }
+  .hi  { color:var(--verde); }
+  .mid { color:var(--amarillo); }
+  .lo  { color:var(--rojo); }
+
+  /* ══ TABLA MÉTRICAS ══ */
+  .tbl-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  thead th {
+    background:var(--gris-bg); color:var(--azul);
+    font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.3px; padding:8px 12px; text-align:left;
+  }
+  tbody td { padding:7px 12px; border-bottom:1px solid var(--gris-bd); }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:#FAFCFF; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .d-ok  { background:var(--verde); }
+  .d-mid { background:var(--amarillo); }
+  .d-lo  { background:var(--rojo); }
+  .sig-buy  { color:var(--verde); font-weight:700; }
+  .sig-sell { color:var(--rojo);  font-weight:700; }
+  .sig-hold { color:var(--amarillo); font-weight:700; }
+
+  /* ══ RECOMENDACIONES ══ */
+  .rec-list { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+  .rec-item {
+    border:1px solid var(--gris-bd); border-radius:10px; padding:10px 14px;
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    transition:box-shadow .2s; position:relative;
+  }
+  .rec-item:hover { box-shadow:0 3px 12px rgba(31,56,100,.12); }
+  .rec-badge {
+    font-size:11px; font-weight:800; padding:5px 10px; border-radius:8px;
+    min-width:46px; text-align:center; flex-shrink:0;
+  }
+  .rb-buy  { background:#D4EDDA; color:var(--verde); }
+  .rb-sell { background:#F8D7DA; color:var(--rojo); }
+  .rb-hold { background:#FFF3CD; color:#856404; }
+  .rec-info { flex:1; }
+  .rec-ticker { font-size:13px; font-weight:700; color:var(--azul); }
+  .rec-desc   { font-size:11px; color:var(--gris-b); margin-top:2px; }
+  .rec-conf {
+    font-size:11.5px; font-weight:700; color:var(--azul2);
+    background:#EBF3FB; border-radius:6px; padding:3px 8px; flex-shrink:0;
+  }
+
+  /* ══ BACKTESTING ══ */
+  .bt-kpis {
+    display:grid; grid-template-columns:repeat(6,1fr);
+    border-bottom:1px solid var(--gris-bd);
+  }
+  .kpi { padding:16px 12px; text-align:center; border-right:1px solid var(--gris-bd); }
+  .kpi:last-child { border-right:none; }
+  .kpi-val { font-size:22px; font-weight:800; }
+  .kpi-lbl { font-size:10px; color:var(--gris-b); text-transform:uppercase; letter-spacing:.4px; margin-top:3px; }
+  .kv-pos { color:var(--verde); }
+  .kv-neg { color:var(--rojo); }
+  .kv-neu { color:var(--azul); }
+
+  .bt-charts { display:grid; grid-template-columns:2fr 1fr; gap:14px; padding:14px 16px; }
+
+  /* ══════════════════════════════
+     RESPONSIVE — VERSIÓN MÓVIL
+     Breakpoints: tablet 1100px / móvil 768px / sm 480px
+  ══════════════════════════════ */
+
+  /* ── Tablet ── */
+  @media(max-width:1100px) {
+    .dash { grid-template-columns:1fr; padding:12px 16px; }
+    .area-candle  { grid-column:1; grid-row:1; }
+    .area-panel   { grid-column:1; grid-row:2; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .area-metrics { grid-column:1; grid-row:3; }
+    .area-bt      { grid-column:1; grid-row:4; }
+    .bt-kpis      { grid-template-columns:repeat(3,1fr); }
+    .bt-charts    { grid-template-columns:1fr; }
+  }
+
+  /* ── Móvil grande (768px) ── */
+  @media(max-width:768px) {
+    /* Navbar compacto */
+    nav { height:auto; padding:10px 14px; flex-wrap:wrap; gap:8px; }
+    .nav-sep  { display:none; }
+    .nav-sub  { display:none; }
+    .nav-left { width:100%; }
+    .nav-right { width:100%; justify-content:flex-start; flex-wrap:wrap; }
+    .nav-select { font-size:12px; padding:5px 10px; flex:1; min-width:80px; }
+    .btn-analizar { font-size:12px; padding:6px 12px; }
+    .conn-pill { font-size:11px; padding:3px 8px; }
+
+    /* Panel lateral en columna única */
+    .area-panel { grid-template-columns:1fr; }
+
+    /* Votos grid */
+    .votos-grid { grid-template-columns:repeat(4,1fr); }
+
+    /* KPIs backtesting — 3 columnas */
+    .bt-kpis { grid-template-columns:repeat(3,1fr); }
+    .kpi { padding:12px 8px; }
+    .kpi-val { font-size:18px; }
+
+    /* Tabla con scroll horizontal */
+    .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table { min-width:600px; }
+
+    /* Modelos más compactos */
+    .models-scroll { max-height:200px; }
+    .model-name { font-size:11px; }
+  }
+
+  /* ── Móvil pequeño (480px — iPhone SE) ── */
+  @media(max-width:480px) {
+    .dash { padding:10px 12px; gap:10px; }
+
+    /* Gráfico candlestick más bajo */
+    #chart-candle { height:260px !important; }
+
+    /* KPIs en 2 columnas */
+    .bt-kpis { grid-template-columns:repeat(2,1fr); }
+    .kpi:nth-child(2n) { border-right:none; }
+    .kpi-val { font-size:16px; }
+    .kpi-lbl { font-size:9px; }
+
+    /* Señal grande */
+    .signal-ring { width:64px; height:64px; font-size:24px; }
+    .signal-lbl  { font-size:20px; }
+
+    /* Cards header más compacto */
+    .card-hdr { font-size:12px; padding:10px 14px; flex-wrap:wrap; gap:4px; }
+    .badge    { font-size:9.5px; }
+
+    /* Recomendaciones */
+    .rec-item { flex-wrap:wrap; gap:8px; }
+    .rec-conf { align-self:flex-start; }
+
+    /* Equity chart más bajo en móvil */
+    #chart-equity { height:160px !important; }
+    #chart-hist   { height:160px !important; }
+
+    /* Footer del dash */
+    .dash::after {
+      content: 'SPBI · Grupo 10 · UNMSM · iDeSo 2026-II';
+      grid-column:1;
+      text-align:center;
+      font-size:10.5px;
+      color:var(--gris-b);
+      padding:8px 0 4px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-brand">📈 <span class="sigla">SPBI</span></div>
+    <div class="nav-sep"></div>
+    <div class="nav-sub">Sistema de Predicción Bursátil Inteligente · Dashboard Principal</div>
+  </div>
+  <div class="nav-right">
+    <div class="conn-pill"><div class="conn-dot"></div>IB Conectado</div>
+    <select class="nav-select" id="ticker-nav" onchange="recargar()">
+      <option>AAPL</option><option>MSFT</option>
+      <option>GOOGL</option><option>TSLA</option><option>NVDA</option>
+    </select>
+    <select class="nav-select" id="periodo-nav" onchange="recargar()">
+      <option value="60">1 Mes</option>
+      <option value="90" selected>3 Meses</option>
+      <option value="180">6 Meses</option>
+      <option value="365">1 Año</option>
+    </select>
+    <button class="btn-analizar" onclick="recargar()">⚡ Ejecutar Análisis</button>
+  </div>
+</nav>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="dash">
+
+  <!-- ── 1. Candlestick + LSTM ── -->
+  <div class="area-candle card">
+    <div class="card-hdr">
+      <span id="candle-title">📊 AAPL — Candlestick con Pronóstico LSTM superpuesto · RF-SAL-01</span>
+      <div style="display:flex;gap:6px;">
+        <span class="badge b-live">● LIVE</span>
+        <span class="badge b-blue">Yahoo Finance · yfinance</span>
+      </div>
+    </div>
+    <div id="chart-candle" style="height:360px;"></div>
+    <div style="padding:8px 18px 10px;display:flex;gap:14px;font-size:11.5px;color:#555;flex-wrap:wrap;">
+      <span><span style="color:#198754">■</span> Alcista</span>
+      <span><span style="color:#DC3545">■</span> Bajista</span>
+      <span style="color:#DC3545">- - LSTM Pronóstico</span>
+      <span style="color:#2E5FAC">─── SMA 20</span>
+      <span>▲ BUY &nbsp;▼ SELL &nbsp;— HOLD</span>
+    </div>
+  </div>
+
+  <!-- ── 2. Panel lateral: Señal + Modelos ── -->
+  <div class="area-panel">
+
+    <!-- Señal consolidada -->
+    <div class="card">
+      <div class="card-hdr">🚦 Señal Consolidada — Ensamblado</div>
+      <div class="signal-box">
+        <div class="signal-ring ring-buy">📈</div>
+        <div class="signal-lbl t-buy">BUY</div>
+        <div class="signal-conf">Confianza del ensamblado: <strong>79.4%</strong></div>
+      </div>
+      <div class="votos-grid">
+        <div class="voto-item"><div class="voto-num vn-buy">8</div><div class="voto-lbl">BUY</div></div>
+        <div class="voto-item"><div class="voto-num vn-sell">1</div><div class="voto-lbl">SELL</div></div>
+        <div class="voto-item"><div class="voto-num vn-hold">1</div><div class="voto-lbl">HOLD</div></div>
+        <div class="voto-item"><div class="voto-num vn-reg">↑</div><div class="voto-lbl">Regresores</div></div>
+      </div>
+      <!-- Recomendaciones activas RF-SAL-02 -->
+      <div class="card-hdr" style="border-top:1px solid var(--gris-bd);">📋 Recomendaciones Activas · RF-SAL-02</div>
+      <div class="rec-list">
+        <div class="rec-item">
+          <div class="rec-badge rb-buy">BUY</div>
+          <div class="rec-info">
+            <div class="rec-ticker">AAPL — Apple Inc.</div>
+            <div class="rec-desc">Tendencia alcista confirmada por 8/10 clasificadores</div>
+          </div>
+          <div class="rec-conf">79.4%</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-badge rb-buy">BUY</div>
+          <div class="rec-info">
+            <div class="rec-ticker">NVDA — NVIDIA Corp.</div>
+            <div class="rec-desc">Impulso positivo · NLP BULLISH</div>
+          </div>
+          <div class="rec-conf">72.1%</div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-badge rb-hold">HOLD</div>
+          <div class="rec-info">
+            <div class="rec-ticker">TSLA — Tesla Inc.</div>
+            <div class="rec-desc">Señales mixtas · Alta volatilidad</div>
+          </div>
+          <div class="rec-conf">54.8%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modelos activos -->
+    <div class="card">
+      <div class="card-hdr">
+        🤖 Modelos Activos
+        <span class="badge b-blue">10 / 16</span>
+      </div>
+      <div class="models-scroll" id="models-list"></div>
+    </div>
+  </div>
+
+  <!-- ── 3. Tabla de métricas ── -->
+  <div class="area-metrics card">
+    <div class="card-hdr">📋 Métricas de Modelos en Tiempo Real · RF-SAL-01</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Modelo</th><th>Tipo</th><th>Accuracy / RMSE</th>
+            <th>F1-Score</th><th>Precision</th><th>Recall</th>
+            <th>Estado</th><th>Señal Actual</th>
+          </tr>
+        </thead>
+        <tbody id="metrics-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. Backtesting ── -->
+  <div class="area-bt card">
+    <div class="card-hdr">
+      📉 Backtesting · VectorBT · Capital inicial: $100,000 USD · Comisión: 0.1% por operación
+      <span class="badge b-gold">RF-BT-01</span>
+    </div>
+    <div class="bt-kpis">
+      <div class="kpi"><div class="kpi-val kv-pos">+34.7%</div><div class="kpi-lbl">Total Return</div></div>
+      <div class="kpi"><div class="kpi-val kv-pos">1.82</div><div class="kpi-lbl">Sharpe Ratio</div></div>
+      <div class="kpi"><div class="kpi-val kv-neg">-12.4%</div><div class="kpi-lbl">Max Drawdown</div></div>
+      <div class="kpi"><div class="kpi-val kv-pos">64.2%</div><div class="kpi-lbl">Win Rate</div></div>
+      <div class="kpi"><div class="kpi-val kv-neu">2.14</div><div class="kpi-lbl">Profit Factor</div></div>
+      <div class="kpi"><div class="kpi-val kv-neu">148</div><div class="kpi-lbl">Total Trades</div></div>
+    </div>
+    <div class="bt-charts">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--azul);padding:0 0 8px;">Curva de Equity — Estrategia vs Buy & Hold</div>
+        <div id="chart-equity" style="height:210px;"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--azul);padding:0 0 8px;">Histograma de Retornos por Trade</div>
+        <div id="chart-hist" style="height:210px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /dash -->
+
+<script>
+/* ══ DATOS SIMULADOS REALISTAS ══ */
+const bases = { AAPL:185, MSFT:415, GOOGL:175, TSLA:220, NVDA:890 };
+
+function genOHLCV(n, base) {
+  let p=base;
+  const fechas=[],o=[],h=[],l=[],c=[],vol=[];
+  const hoy=new Date();
+  for(let i=n;i>=0;i--) {
+    const d=new Date(hoy); d.setDate(hoy.getDate()-i);
+    if(d.getDay()===0||d.getDay()===6) continue;
+    const op=p, chg=(Math.random()-.47)*.018;
+    const cl=+(op*(1+chg)).toFixed(2);
+    fechas.push(d.toISOString().slice(0,10));
+    o.push(op); c.push(cl);
+    h.push(+(Math.max(op,cl)*(1+Math.random()*.009)).toFixed(2));
+    l.push(+(Math.min(op,cl)*(1-Math.random()*.009)).toFixed(2));
+    vol.push(Math.floor(28e6+Math.random()*55e6));
+    p=cl;
+  }
+  return {fechas,o,h,l,c,vol};
+}
+
+function sma(arr,n) {
+  return arr.map((_,i)=>i<n-1?null:arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n);
+}
+
+/* ══ CANDLESTICK ══ */
+function renderCandle() {
+  const ticker = document.getElementById('ticker-nav').value;
+  const dias   = +document.getElementById('periodo-nav').value;
+  const {fechas,o,h,l,c} = genOHLCV(dias, bases[ticker]||185);
+  document.getElementById('candle-title').textContent =
+    `📊 ${ticker} — Candlestick con Pronóstico LSTM superpuesto · RF-SAL-01`;
+
+  // LSTM simulado
+  const lstmY = c.map((v,i)=>i<10?null:+(v*(1+(Math.random()-.44)*.013)).toFixed(2));
+  const sma20  = sma(c,20);
+
+  // Señales BUY/SELL
+  const bx=[],by=[],sx=[],sy=[];
+  c.forEach((v,i)=>{
+    const r=Math.random();
+    if(r<0.16){bx.push(fechas[i]);by.push(l[i]*0.997);}
+    else if(r<0.28){sx.push(fechas[i]);sy.push(h[i]*1.003);}
+  });
+
+  Plotly.newPlot('chart-candle',[
+    {type:'candlestick',x:fechas,open:o,high:h,low:l,close:c,name:'OHLC',
+     increasing:{line:{color:'#198754'},fillcolor:'#198754'},
+     decreasing:{line:{color:'#DC3545'},fillcolor:'#DC3545'}},
+    {type:'scatter',x:fechas,y:lstmY,name:'LSTM Pronóstico',mode:'lines',
+     line:{color:'#DC3545',width:1.8,dash:'dot'},connectgaps:true},
+    {type:'scatter',x:fechas,y:sma20,name:'SMA 20',mode:'lines',
+     line:{color:'#2E5FAC',width:1.5},connectgaps:true},
+    {type:'scatter',x:bx,y:by,name:'BUY ▲',mode:'markers',
+     marker:{symbol:'triangle-up',size:9,color:'#198754',line:{color:'#126640',width:1}}},
+    {type:'scatter',x:sx,y:sy,name:'SELL ▼',mode:'markers',
+     marker:{symbol:'triangle-down',size:9,color:'#DC3545',line:{color:'#a52030',width:1}}},
+  ],{
+    template:'plotly_white',
+    margin:{t:8,b:20,l:62,r:12},
+    xaxis:{rangeslider:{visible:false},type:'date'},
+    yaxis:{title:'Precio (USD)',gridcolor:'#F0F4FA'},
+    legend:{orientation:'h',y:-0.1,font:{size:11}},
+    paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'Segoe UI'}
+  },{responsive:true});
+}
+
+/* ══ MODELOS ══ */
+const MODELOS = [
+  {n:'SVC',          t:'clf', met:'71.4%', lv:'hi',  sig:'BUY'},
+  {n:'LSTM Clf',     t:'clf', met:'68.9%', lv:'hi',  sig:'BUY'},
+  {n:'BiLSTM',       t:'clf', met:'70.2%', lv:'hi',  sig:'BUY'},
+  {n:'NLP VADER',    t:'clf', met:'65.1%', lv:'mid', sig:'BUY'},
+  {n:'XGBoost',      t:'clf', met:'74.3%', lv:'hi',  sig:'BUY'},
+  {n:'GRU',          t:'clf', met:'67.8%', lv:'hi',  sig:'HOLD'},
+  {n:'LLM OpenAI',   t:'clf', met:'72.0%', lv:'hi',  sig:'BUY'},
+  {n:'Random Forest',t:'clf', met:'69.5%', lv:'hi',  sig:'BUY'},
+  {n:'SimpleRNN',    t:'clf', met:'62.4%', lv:'mid', sig:'SELL'},
+  {n:'LSTM Reg.',    t:'reg', met:'$4.21', lv:'hi',  sig:'↑'},
+];
+
+function renderModelos() {
+  document.getElementById('models-list').innerHTML = MODELOS.map((m,i)=>`
+    <div class="model-row">
+      <input type="checkbox" checked>
+      <span class="model-name">${m.n}</span>
+      <span class="mb ${m.t==='clf'?'mb-clf':'mb-reg'}">${m.t==='clf'?'CLF':'REG'}</span>
+      <span class="model-met ${m.lv}">${m.met}</span>
+    </div>`).join('');
+
+  document.getElementById('metrics-body').innerHTML = MODELOS.map(m=>`
+    <tr>
+      <td><strong>${m.n}</strong></td>
+      <td><span class="mb ${m.t==='clf'?'mb-clf':'mb-reg'}">${m.t==='clf'?'Clasificación':'Regresión'}</span></td>
+      <td><span class="model-met ${m.lv}">${m.met}</span></td>
+      <td>${m.t==='clf'?(0.60+Math.random()*.15).toFixed(3):'—'}</td>
+      <td>${m.t==='clf'?(0.62+Math.random()*.14).toFixed(3):'—'}</td>
+      <td>${m.t==='clf'?(0.59+Math.random()*.14).toFixed(3):'—'}</td>
+      <td><span class="dot d-${m.lv==='hi'?'ok':m.lv==='mid'?'mid':'lo'}"></span></td>
+      <td class="sig-${m.sig==='BUY'?'buy':m.sig==='SELL'?'sell':'hold'}">${m.sig}</td>
+    </tr>`).join('');
+}
+
+/* ══ BACKTESTING ══ */
+function renderBT() {
+  let cap=100000, bh0=100000;
+  const fechas=[],equity=[],bhArr=[];
+  const hoy=new Date();
+  for(let i=365;i>=0;i--) {
+    const d=new Date(hoy); d.setDate(hoy.getDate()-i);
+    if(d.getDay()===0||d.getDay()===6) continue;
+    cap  *= (1+(Math.random()-.46)*.014);
+    bh0  *= (1+(Math.random()-.48)*.012);
+    fechas.push(d.toISOString().slice(0,10));
+    equity.push(+cap.toFixed(0));
+    bhArr.push(+bh0.toFixed(0));
+  }
+
+  Plotly.newPlot('chart-equity',[
+    {type:'scatter',x:fechas,y:equity,name:'Estrategia SPBI',mode:'lines',fill:'tozeroy',
+     line:{color:'#1F3864',width:2},fillcolor:'rgba(31,56,100,.07)'},
+    {type:'scatter',x:fechas,y:bhArr,name:'Buy & Hold',mode:'lines',
+     line:{color:'#aaa',width:1.5,dash:'dot'}},
+  ],{
+    template:'plotly_white',margin:{t:8,b:30,l:68,r:8},
+    yaxis:{title:'USD',tickformat:'$,.0f',gridcolor:'#F0F4FA'},
+    xaxis:{type:'date'},
+    legend:{font:{size:10},orientation:'h',y:-0.22},
+    paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'Segoe UI'}
+  },{responsive:true,displayModeBar:false});
+
+  const rets = Array.from({length:148},()=>(Math.random()-.42)*.06);
+  Plotly.newPlot('chart-hist',[
+    {type:'histogram',x:rets,nbinsx:20,name:'Retornos',
+     marker:{color:rets.map(v=>v>=0?'#198754':'#DC3545'),opacity:.85}}
+  ],{
+    template:'plotly_white',margin:{t:8,b:30,l:42,r:8},
+    xaxis:{title:'Retorno',tickformat:'.1%'},
+    yaxis:{title:'N° Trades'},
+    paper_bgcolor:'white',plot_bgcolor:'white',font:{family:'Segoe UI'}
+  },{responsive:true,displayModeBar:false});
+}
+
+function recargar() { renderCandle(); }
+
+/* Inicializar */
+renderCandle();
+renderModelos();
+renderBT();
+</script>
+</body>
+</html>
