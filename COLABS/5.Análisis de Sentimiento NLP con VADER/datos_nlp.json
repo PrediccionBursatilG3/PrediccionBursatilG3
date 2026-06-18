@@ -1,0 +1,565 @@
+{
+  "metadata": {
+    "modulo": "Análisis de Sentimiento NLP",
+    "metodo": "VADER (NLTK)",
+    "fecha_generacion": "2026-06-17 15:36:55",
+    "umbral_bullish": 0.05,
+    "umbral_bearish": -0.05,
+    "tickers_analizados": [
+      "FSM",
+      "VOLCABC1",
+      "ABX",
+      "BVN",
+      "BHP"
+    ]
+  },
+  "resumen_por_ticker": {
+    "FSM": {
+      "ticker": "FSM",
+      "nombre_empresa": "Fortuna Silver Mines Inc.",
+      "compound_promedio": 0.2788,
+      "clasificacion_general": "Bullish",
+      "total_noticias": 10,
+      "conteo_bullish": 5,
+      "conteo_bearish": 0,
+      "conteo_neutral": 5,
+      "fuente_noticias": "real"
+    },
+    "VOLCABC1": {
+      "ticker": "VOLCABC1",
+      "nombre_empresa": "Volcan Compañía Minera S.A.A.",
+      "compound_promedio": 0.1489,
+      "clasificacion_general": "Bullish",
+      "total_noticias": 8,
+      "conteo_bullish": 3,
+      "conteo_bearish": 1,
+      "conteo_neutral": 4,
+      "fuente_noticias": "simulado"
+    },
+    "ABX": {
+      "ticker": "ABX",
+      "nombre_empresa": "Barrick Gold Corporation",
+      "compound_promedio": 0.2303,
+      "clasificacion_general": "Bullish",
+      "total_noticias": 10,
+      "conteo_bullish": 5,
+      "conteo_bearish": 1,
+      "conteo_neutral": 4,
+      "fuente_noticias": "real"
+    },
+    "BVN": {
+      "ticker": "BVN",
+      "nombre_empresa": "Compañía de Minas Buenaventura S.A.A.",
+      "compound_promedio": 0.1256,
+      "clasificacion_general": "Bullish",
+      "total_noticias": 10,
+      "conteo_bullish": 4,
+      "conteo_bearish": 0,
+      "conteo_neutral": 6,
+      "fuente_noticias": "real"
+    },
+    "BHP": {
+      "ticker": "BHP",
+      "nombre_empresa": "BHP Billiton Limited",
+      "compound_promedio": 0.2044,
+      "clasificacion_general": "Bullish",
+      "total_noticias": 10,
+      "conteo_bullish": 5,
+      "conteo_bearish": 3,
+      "conteo_neutral": 2,
+      "fuente_noticias": "real"
+    }
+  },
+  "detalle_noticias": {
+    "FSM": [
+      {
+        "titulo": "FSM Advances Diamba Sud Project With Environmental Approval",
+        "fecha": "2026-06-17T13:25:00Z",
+        "fuente": "Zacks",
+        "compound": 0.4767,
+        "pos": 0.307,
+        "neg": 0.0,
+        "neu": 0.693,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Fortuna secures environmental approval for Diamba Sud mine",
+        "fecha": "2026-06-16T07:48:27Z",
+        "fuente": "Mining Technology",
+        "compound": 0.6597,
+        "pos": 0.474,
+        "neg": 0.0,
+        "neu": 0.526,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Is Fortuna Mining Corp. (FSM) A Good Stock To Buy Now?",
+        "fecha": "2026-06-11T18:16:33Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.4404,
+        "pos": 0.244,
+        "neg": 0.0,
+        "neu": 0.756,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Undiscovered Gems in Canada to Watch This June 2026",
+        "fecha": "2026-06-11T12:33:24Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Fortuna Mining Record Quarter Highlights Séguéla Strength And Growth Choices",
+        "fecha": "2026-05-16T23:08:58Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.7003,
+        "pos": 0.42,
+        "neg": 0.0,
+        "neu": 0.58,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "AUGO Trades at a Premium Valuation: Should Investors Be Bearish?",
+        "fecha": "2026-05-15T12:45:00Z",
+        "fuente": "Zacks",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "ASM Q1 Earnings Beat on Record Revenues & Strong Silver Prices",
+        "fecha": "2026-05-14T13:22:00Z",
+        "fuente": "Zacks",
+        "compound": 0.5106,
+        "pos": 0.268,
+        "neg": 0.0,
+        "neu": 0.732,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Fortuna Mining (FSM) Achieves Record Q1 2026 Results Driven by High Gold Prices",
+        "fecha": "2026-05-13T04:31:19Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "ASM to Report Q1 Earnings: Here's What to Expect From the Stock",
+        "fecha": "2026-05-11T15:01:00Z",
+        "fuente": "Zacks",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Fortuna Mining Q1 Earnings Call Highlights",
+        "fecha": "2026-05-10T12:10:03Z",
+        "fuente": "MarketBeat",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      }
+    ],
+    "VOLCABC1": [
+      {
+        "titulo": "Volcan Compañía Minera S.A.A. announces new mining concession expected to boost output",
+        "fecha": "2026-06-07",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.4019,
+        "pos": 0.197,
+        "neg": 0.0,
+        "neu": 0.803,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Volcan Compañía Minera S.A.A. reports record quarterly production and raises full-year guidance",
+        "fecha": "2026-06-06",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Analysts downgrade VOLCABC1 amid rising operational costs",
+        "fecha": "2026-06-03",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Volcan Compañía Minera S.A.A. maintains current dividend policy for the fiscal year",
+        "fecha": "2026-06-09",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Industry report highlights mining sector trends including Volcan Compañía Minera S.A.A.",
+        "fecha": "2026-06-16",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Analysts upgrade Volcan Compañía Minera S.A.A. citing improved operational efficiency",
+        "fecha": "2026-06-08",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.6808,
+        "pos": 0.412,
+        "neg": 0.0,
+        "neu": 0.588,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Volcan Compañía Minera S.A.A. reports wider than expected quarterly losses",
+        "fecha": "2026-06-11",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": -0.4019,
+        "pos": 0.0,
+        "neg": 0.231,
+        "neu": 0.769,
+        "clasificacion": "Bearish"
+      },
+      {
+        "titulo": "Volcan Compañía Minera S.A.A. stock surges after strong earnings beat analyst expectations",
+        "fecha": "2026-06-17",
+        "fuente": "Dataset simulado (fallback)",
+        "compound": 0.5106,
+        "pos": 0.231,
+        "neg": 0.0,
+        "neu": 0.769,
+        "clasificacion": "Bullish"
+      }
+    ],
+    "ABX": [
+      {
+        "titulo": "Jefferies Names Kinross Gold (KGC) Among Four Buy-Rated Mining Stocks",
+        "fecha": "2026-06-16T18:27:32Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Gold Jumps After US and Iran Reach Deal to Reopen Hormuz Strait",
+        "fecha": "2026-06-15T19:09:11Z",
+        "fuente": "Bloomberg",
+        "compound": 0.0258,
+        "pos": 0.091,
+        "neg": 0.0,
+        "neu": 0.909,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Newmont Stock Loses 9% in a Month: Should You Buy the Dip?",
+        "fecha": "2026-06-15T11:55:00Z",
+        "fuente": "Zacks",
+        "compound": -0.3182,
+        "pos": 0.0,
+        "neg": 0.187,
+        "neu": 0.813,
+        "clasificacion": "Bearish"
+      },
+      {
+        "titulo": "REPLAY: Fireside Chat with West Point Gold CEO Derek Macpherson",
+        "fecha": "2026-06-15T11:30:47Z",
+        "fuente": "IPO-Edge.com",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Barrick Mining (NYSE:B) Stock After 90% One-Year Surge Still Looks Priced For Opportunity",
+        "fecha": "2026-06-14T16:11:50Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.4215,
+        "pos": 0.189,
+        "neg": 0.0,
+        "neu": 0.811,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Barrick Mining ESG Progress Report Sheds Light On Long Term Risks And Rewards",
+        "fecha": "2026-06-14T10:09:03Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.5859,
+        "pos": 0.328,
+        "neg": 0.117,
+        "neu": 0.556,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Barrick Mining’s Sustainability Progress Meets Discounted Valuation Opportunity",
+        "fecha": "2026-06-14T05:10:17Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.7003,
+        "pos": 0.576,
+        "neg": 0.0,
+        "neu": 0.424,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Barrick (TSX:ABX) Stock Valuation Reset After Gold Sector Rotation",
+        "fecha": "2026-06-14T01:09:35Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "There’s a Bug in the Gold Trade as Miners Move Like Meme Stocks",
+        "fecha": "2026-06-13T12:00:00Z",
+        "fuente": "Bloomberg",
+        "compound": 0.3612,
+        "pos": 0.185,
+        "neg": 0.0,
+        "neu": 0.815,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Analysts Remain Optimistic on Bloom Energy (BE)",
+        "fecha": "2026-06-13T03:09:19Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.5267,
+        "pos": 0.468,
+        "neg": 0.0,
+        "neu": 0.532,
+        "clasificacion": "Bullish"
+      }
+    ],
+    "BVN": [
+      {
+        "titulo": "Is Compañía de Minas Buenaventura S.A.A. (BVN) A Good Stock To Buy Now?",
+        "fecha": "2026-06-09T14:29:50Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.4404,
+        "pos": 0.209,
+        "neg": 0.0,
+        "neu": 0.791,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Buenaventura (BVN) Faces Near-Term Questions As Investors Await Bigger Catalysts",
+        "fecha": "2026-06-04T13:30:10Z",
+        "fuente": "Insider Monkey",
+        "compound": 0.1027,
+        "pos": 0.135,
+        "neg": 0.0,
+        "neu": 0.865,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "3 Dividend Stocks To Consider With Yields Starting At 3.2%",
+        "fecha": "2026-06-02T11:31:58Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "ASM Q1 Earnings Beat on Record Revenues & Strong Silver Prices",
+        "fecha": "2026-05-14T13:22:00Z",
+        "fuente": "Zacks",
+        "compound": 0.5106,
+        "pos": 0.268,
+        "neg": 0.0,
+        "neu": 0.732,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "ASM to Report Q1 Earnings: Here's What to Expect From the Stock",
+        "fecha": "2026-05-11T15:01:00Z",
+        "fuente": "Zacks",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Top Dividend Stocks To Consider In May 2026",
+        "fecha": "2026-05-04T17:32:14Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.2023,
+        "pos": 0.205,
+        "neg": 0.0,
+        "neu": 0.795,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Buenaventura Output Surge And New Permits Tested Against Valuation Metrics",
+        "fecha": "2026-05-01T17:13:16Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Buenaventura Mining Q1 Earnings Call Highlights",
+        "fecha": "2026-05-01T07:27:27Z",
+        "fuente": "MarketBeat",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Compania De Minas Buenaventura SAA (BVN) Q1 2026 Earnings Call Highlights: Record Revenue Surge ...",
+        "fecha": "2026-05-01T07:17:40Z",
+        "fuente": "GuruFocus.com",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Buenaventura Gears Up to Report Q1 Earnings: What's in the Offing?",
+        "fecha": "2026-04-27T15:58:00Z",
+        "fuente": "Zacks",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      }
+    ],
+    "BHP": [
+      {
+        "titulo": "Update: US Equity Futures Edge Slightly Higher Pre-Bell Ahead of Fed Decision Under New Chair",
+        "fecha": "2026-06-17T12:49:45Z",
+        "fuente": "MT Newswires",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "Lundin Mining Says Vicuna Corp. Received Approval for RIGI PEELP in Argentina",
+        "fecha": "2026-06-16T21:15:32Z",
+        "fuente": "MT Newswires",
+        "compound": 0.4767,
+        "pos": 0.22,
+        "neg": 0.0,
+        "neu": 0.78,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Nuclear Energy Stocks Gain From Growing Need for Reliable Clean Power",
+        "fecha": "2026-06-16T16:57:00Z",
+        "fuente": "Zacks",
+        "compound": 0.836,
+        "pos": 0.586,
+        "neg": 0.0,
+        "neu": 0.414,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "European Stocks Higher in Tuesday Trading; Markets Buoyed by US, Iran Peace Deal; Inflation Remains a Concern",
+        "fecha": "2026-06-16T15:42:07Z",
+        "fuente": "MT Newswires",
+        "compound": 0.5423,
+        "pos": 0.189,
+        "neg": 0.0,
+        "neu": 0.811,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Market Chatter: BHP, Rio Tinto Look to India to Offset Slowing Chinese Steel Demand",
+        "fecha": "2026-06-16T09:13:04Z",
+        "fuente": "MT Newswires",
+        "compound": -0.128,
+        "pos": 0.0,
+        "neg": 0.103,
+        "neu": 0.897,
+        "clasificacion": "Bearish"
+      },
+      {
+        "titulo": "Will New BHP Potash and Propane Volumes Reshape Canadian National Railway's (TSX:CNR) Resource-Corridor Narrative",
+        "fecha": "2026-06-13T11:11:52Z",
+        "fuente": "Simply Wall St.",
+        "compound": 0.0,
+        "pos": 0.0,
+        "neg": 0.0,
+        "neu": 1.0,
+        "clasificacion": "Neutral"
+      },
+      {
+        "titulo": "BHP Advances Lower-Carbon Conveyor Solutions With BOTON Partnership",
+        "fecha": "2026-06-12T13:53:00Z",
+        "fuente": "Zacks",
+        "compound": 0.1779,
+        "pos": 0.195,
+        "neg": 0.0,
+        "neu": 0.805,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Is BHP Group Limited (BHP) Outperforming Other Basic Materials Stocks This Year?",
+        "fecha": "2026-06-12T13:40:02Z",
+        "fuente": "Zacks",
+        "compound": -0.2263,
+        "pos": 0.0,
+        "neg": 0.147,
+        "neu": 0.853,
+        "clasificacion": "Bearish"
+      },
+      {
+        "titulo": "BHP, BOTON sign agreement for mining conveyor systems",
+        "fecha": "2026-06-11T14:36:05Z",
+        "fuente": "Mining Technology",
+        "compound": 0.4939,
+        "pos": 0.314,
+        "neg": 0.0,
+        "neu": 0.686,
+        "clasificacion": "Bullish"
+      },
+      {
+        "titulo": "Hundreds of BHP workers back strike at key Australian iron ore export hub",
+        "fecha": "2026-06-11T09:47:03Z",
+        "fuente": "Reuters",
+        "compound": -0.128,
+        "pos": 0.0,
+        "neg": 0.111,
+        "neu": 0.889,
+        "clasificacion": "Bearish"
+      }
+    ]
+  }
+}
