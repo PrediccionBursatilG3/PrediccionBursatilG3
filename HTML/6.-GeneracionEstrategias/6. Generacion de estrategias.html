@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Invest Pro — Generación de Estrategias</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#0A0E1A;
+    --bg-elevated:#10172A;
+    --bg-elevated-2:#161F38;
+    --bg-input:#0D1426;
+    --border:rgba(255,255,255,.07);
+    --border-strong:rgba(255,255,255,.14);
+    --text-primary:#E9ECF5;
+    --text-secondary:#8993AC;
+    --text-tertiary:#525C75;
+    --accent:#4F7CFF;
+    --accent-soft:rgba(79,124,255,.14);
+    --gold:#C5961A;
+    --gold-soft:rgba(197,150,26,.14);
+    --positive:#22C55E;
+    --positive-soft:rgba(34,197,94,.13);
+    --negative:#EF4444;
+    --negative-soft:rgba(239,68,68,.13);
+    --radius-lg:16px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --font-sans:'Inter',-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(900px 480px at 85% -8%, rgba(79,124,255,.10), transparent 60%),
+      radial-gradient(700px 420px at -5% 10%, rgba(197,150,26,.06), transparent 55%),
+      var(--bg);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+    min-height:100vh;
+  }
+  .shell{display:flex;min-height:100vh;}
+
+  .sidebar{
+    width:236px;flex-shrink:0;background:var(--bg-elevated);
+    border-right:1px solid var(--border);
+    padding:20px 14px;display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,#5B8CFF,#7C5CFF);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+  .brand-name{font-size:14.5px;font-weight:600;letter-spacing:.1px;}
+  .brand-sub{font-size:10.5px;color:var(--text-tertiary);margin-top:1px;}
+  .nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:default;user-select:none;}
+  .nav-item i{font-size:17px;width:18px;text-align:center;}
+  .nav-item.active{background:var(--accent-soft);color:#C9D6FF;}
+  .nav-item.active i{color:var(--accent);}
+  .nav-item:not(.active){opacity:.62;}
+  .sidebar-foot{border-top:1px solid var(--border);padding-top:14px;display:flex;align-items:center;gap:9px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-elevated-2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);flex-shrink:0;}
+  .foot-name{font-size:12.5px;font-weight:500;}
+  .foot-role{font-size:10.5px;color:var(--text-tertiary);}
+
+  .main{flex:1;min-width:0;padding:24px 28px 40px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .page-title{font-size:20px;font-weight:600;}
+  .page-sub{font-size:12.5px;color:var(--text-secondary);margin-top:3px;}
+  .badge{background:var(--accent-soft);color:#9AB4FF;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.6px;align-self:flex-start;}
+
+  .ratio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;}
+  .ratio-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px 16px;display:flex;align-items:center;gap:13px;}
+  .ratio-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+  .ratio-label{font-size:10.5px;color:var(--text-tertiary);margin-bottom:3px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;}
+  .ratio-value{font-family:var(--font-mono);font-size:21px;font-weight:600;line-height:1;}
+  .ratio-delta{font-size:11px;margin-top:3px;color:var(--text-secondary);}
+
+  .main-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+  .panel{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+  .panel-title{font-size:13px;font-weight:600;letter-spacing:.2px;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+  .panel-title i{font-size:16px;color:var(--gold);}
+  .form-group{margin-bottom:18px;}
+  .form-label{font-size:12px;color:var(--text-secondary);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;}
+  .form-label span{font-weight:600;color:var(--text-primary);}
+  .risk-track{position:relative;margin-top:4px;}
+  input[type=range]{width:100%;height:4px;appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,40%),var(--bg-elevated-2) var(--pct,40%),var(--bg-elevated-2) 100%);border-radius:4px;outline:none;cursor:pointer;border:none;}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--bg-elevated);border:3px solid var(--gold);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--bg-elevated);border:3px solid var(--gold);cursor:pointer;}
+  .risk-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--text-tertiary);}
+  select{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:9px;background:var(--bg-input);font-size:13px;color:var(--text-primary);outline:none;cursor:pointer;appearance:none;font-family:var(--font-sans);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238993AC' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  .capital-input{position:relative;}
+  .currency-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-tertiary);font-family:var(--font-mono);}
+  input[type=number]{width:100%;padding:10px 12px 10px 26px;border:1px solid var(--border-strong);border-radius:9px;background:var(--bg-input);font-size:13px;color:var(--text-primary);outline:none;font-family:var(--font-mono);}
+  input[type=number]:focus, select:focus{border-color:var(--accent);}
+  .gen-btn{width:100%;padding:12px;background:linear-gradient(135deg,#5B8CFF,#3D5FE0);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:filter .15s;font-family:var(--font-sans);}
+  .gen-btn:hover{filter:brightness(1.1);}
+  .gen-btn:disabled{opacity:.6;cursor:default;}
+  .gen-btn i{font-size:16px;}
+  .data-source{font-size:10.5px;color:var(--text-tertiary);margin-top:12px;display:flex;align-items:center;gap:6px;}
+  .data-source i{font-size:13px;}
+
+  .strategies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
+  .strat-card{background:var(--bg-elevated-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden;}
+  .strat-card:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+  .strat-card.active{border-color:var(--gold);}
+  .strat-accent{position:absolute;top:0;left:0;width:3px;height:100%;}
+  .strat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;padding-left:8px;}
+  .strat-name{font-size:13px;font-weight:600;}
+  .strat-type{font-size:10px;color:var(--text-tertiary);margin-top:2px;}
+  .risk-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .strat-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-left:8px;margin-bottom:13px;}
+  .metric-lbl{font-size:9.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px;}
+  .metric-val{font-size:13px;font-weight:600;font-family:var(--font-mono);margin-top:2px;}
+  .metric-val.green{color:var(--positive);}
+  .metric-val.red{color:var(--negative);}
+  .metric-val.amber{color:var(--gold);}
+  .payoff-wrap{padding-left:8px;}
+  .payoff-lbl{font-size:9.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px;}
+  .score-bar{margin-top:11px;padding-left:8px;}
+  .score-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .score-track{flex:1;height:4px;background:var(--bg-input);border-radius:4px;overflow:hidden;}
+  .score-fill{height:100%;border-radius:4px;}
+  .score-num{font-size:11px;color:var(--text-secondary);min-width:22px;text-align:right;font-family:var(--font-mono);}
+
+  .skeleton{position:relative;overflow:hidden;background:var(--bg-elevated-2);border-radius:8px;height:210px;}
+  .skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 1.4s infinite;}
+  @keyframes shimmer{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
+  .err-box{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px 4px;color:var(--text-secondary);font-size:13px;grid-column:1/-1;}
+  .err-box i{font-size:22px;color:var(--negative);}
+  .retry-btn{background:var(--bg-elevated-2);border:1px solid var(--border-strong);color:var(--text-primary);padding:7px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-family:var(--font-sans);}
+  .retry-btn:hover{border-color:var(--accent);}
+
+  @media (max-width:900px){
+    .sidebar{display:none;}
+    .main-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:640px){
+    .ratio-grid{grid-template-columns:1fr 1fr;}
+    .main{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="ti ti-chart-candle" style="font-size:17px;color:#fff;"></i></div>
+      <div>
+        <div class="brand-name">AI Invest Pro</div>
+        <div class="brand-sub">Investment Platform</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+      <div class="nav-item"><i class="ti ti-chart-candle"></i>Mercados</div>
+      <div class="nav-item"><i class="ti ti-brain"></i>Predicciones IA</div>
+      <div class="nav-item active"><i class="ti ti-bulb"></i>Estrategias</div>
+      <div class="nav-item"><i class="ti ti-briefcase"></i>Portafolio</div>
+      <div class="nav-item"><i class="ti ti-history"></i>Backtesting</div>
+      <div class="nav-item"><i class="ti ti-broadcast"></i>Señales &amp; Broker</div>
+      <div class="nav-item"><i class="ti ti-news"></i>Noticias NLP</div>
+      <div class="nav-item"><i class="ti ti-settings"></i>Configuración</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar"><i class="ti ti-user"></i></div>
+      <div>
+        <div class="foot-name">Inversionista</div>
+        <div class="foot-role">Cuenta activa</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Generación de Estrategias con IA</div>
+        <div class="page-sub">Configura tu perfil y descubre estrategias de opciones sugeridas</div>
+      </div>
+      <span class="badge">INSTITUTIONAL</span>
+    </div>
+
+    <div class="ratio-grid" id="ratioGrid">
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-user-circle"></i> Perfil del inversionista</div>
+
+        <div class="form-group">
+          <div class="form-label">Tolerancia al riesgo <span id="riskLabel">4 — Moderado</span></div>
+          <div class="risk-track">
+            <input type="range" id="riskSlider" min="1" max="10" value="4" step="1">
+            <div class="risk-labels"><span>Conservador</span><span>Agresivo</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Horizonte de inversión</div>
+          <select id="horizon">
+            <option value="short">Corto plazo — 3 a 6 meses</option>
+            <option value="medium" selected>Mediano plazo — 6 a 18 meses</option>
+            <option value="long">Largo plazo — 18 meses+</option>
+            <option value="tactical">Táctico — menos de 30 días</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Perspectiva de mercado</div>
+          <select id="outlook">
+            <option value="bullish">Alcista — esperando subida</option>
+            <option value="neutral" selected>Neutral — rango lateral</option>
+            <option value="bearish">Bajista — esperando caída</option>
+            <option value="volatile">Alta volatilidad esperada</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Capital disponible (USD)</div>
+          <div class="capital-input">
+            <span class="currency-prefix">$</span>
+            <input type="number" id="capital" value="50000" min="1000" step="1000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Activo subyacente</div>
+          <select id="asset"></select>
+        </div>
+
+        <button class="gen-btn" id="genBtn" onclick="generateStrategies()">
+          <i class="ti ti-wand"></i> <span id="genBtnLabel">Generar estrategias</span>
+        </button>
+        <div class="data-source"><i class="ti ti-database"></i><span id="dataSourceLabel">Cargando datos…</span></div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-title"><i class="ti ti-bulb"></i> Estrategias sugeridas</div>
+          <div class="strategies-grid" id="strategiesGrid">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let strategyData = null;
+const payoffCharts = {};
+
+const slider = document.getElementById('riskSlider');
+const riskNames = {1:'Conservador',2:'Conservador+',3:'Moderado-',4:'Moderado',5:'Moderado+',6:'Balanceado',7:'Activo',8:'Agresivo-',9:'Agresivo',10:'Especulativo'};
+const riskColors = {1:'#22C55E',2:'#22C55E',3:'#22C55E',4:'#4F7CFF',5:'#4F7CFF',6:'#C5961A',7:'#C5961A',8:'#F59E0B',9:'#EF4444',10:'#EF4444'};
+
+slider.addEventListener('input', () => {
+  const v = slider.value;
+  const pct = ((v-1)/9*100).toFixed(1);
+  slider.style.setProperty('--pct', pct + '%');
+  document.getElementById('riskLabel').textContent = v + ' — ' + riskNames[v];
+  document.getElementById('riskLabel').style.color = riskColors[v];
+  if(strategyData) renderRatios(parseInt(v));
+});
+slider.style.setProperty('--pct', '33.3%');
+
+async function loadStrategyData(){
+  try{
+    const res = await fetch('./data/strategies.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    strategyData = data;
+    document.getElementById('asset').innerHTML = data.assets.map((a,i)=>
+      `<option value="${a.symbol}" ${a.symbol==='QQQ'?'selected':''}>${a.symbol} — ${a.name}</option>`).join('');
+    document.getElementById('dataSourceLabel').textContent = 'Datos cargados de data/strategies.json · ' + new Date(data.generatedAt).toLocaleString('es-PE',{dateStyle:'medium',timeStyle:'short'});
+    renderRatios(parseInt(slider.value));
+    generateStrategies();
+  }catch(err){
+    document.getElementById('strategiesGrid').innerHTML = `
+      <div class="err-box">
+        <i class="ti ti-alert-triangle"></i>
+        <div>No se pudieron cargar las estrategias (${err.message}). Verifica que <code>data/strategies.json</code> exista junto a este archivo.</div>
+        <button class="retry-btn" onclick="loadStrategyData()"><i class="ti ti-refresh"></i> Reintentar</button>
+      </div>`;
+    document.getElementById('dataSourceLabel').textContent = 'Error al cargar datos';
+  }
+}
+
+function renderRatios(riskLevel){
+  const profile = strategyData.riskProfiles.find(r => r.level === riskLevel) || strategyData.riskProfiles[3];
+  const ratios = [
+    {label:'Sharpe Ratio', value:profile.sharpe.toFixed(2), delta:'vs. benchmark', icon:'ti-chart-line', bg:'rgba(79,124,255,.14)', ic:'#4F7CFF'},
+    {label:'Sortino Ratio', value:profile.sortino.toFixed(2), delta:'Ajustado a baja', icon:'ti-trending-up', bg:'rgba(197,150,26,.14)', ic:'#C5961A'},
+    {label:'Calmar Ratio', value:profile.calmar.toFixed(2), delta:'Ajustado a drawdown', icon:'ti-shield-check', bg:'rgba(34,197,94,.13)', ic:'#22C55E'},
+    {label:'Volatilidad', value:profile.volatility.toFixed(1)+'%', delta:'Anualizada', icon:'ti-activity', bg:'rgba(239,68,68,.13)', ic:'#EF4444'}
+  ];
+  document.getElementById('ratioGrid').innerHTML = ratios.map(r=>`
+    <div class="ratio-card">
+      <div class="ratio-icon" style="background:${r.bg}"><i class="ti ${r.icon}" style="color:${r.ic};font-size:20px;"></i></div>
+      <div>
+        <div class="ratio-label">${r.label}</div>
+        <div class="ratio-value">${r.value}</div>
+        <div class="ratio-delta">${r.delta} · perfil ${profile.label}</div>
+      </div>
+    </div>`).join('');
+}
+
+function fmtMoney(n){
+  if(n === null || n === undefined) return n === null ? 'Ilimitado' : 'N/A';
+  return (n>=0?'+':'-') + '$' + Math.abs(n).toLocaleString('en-US');
+}
+
+function drawPayoff(canvasId, strat){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  if(payoffCharts[canvasId]) payoffCharts[canvasId].destroy();
+  payoffCharts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type:'line',
+    data:{
+      labels: strat.payoff.map(p=>p.x),
+      datasets:[{
+        data: strat.payoff.map(p=>p.y),
+        borderColor: strat.accentColor,
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: { target:{value:0}, above:'rgba(34,197,94,.10)', below:'rgba(239,68,68,.10)' },
+        tension: 0.3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{enabled:false}},
+      scales:{x:{display:false}, y:{display:false}},
+      animation:{duration:350}
+    }
+  });
+}
+
+async function generateStrategies(){
+  if(!strategyData) return;
+  const btn = document.getElementById('genBtn');
+  const label = document.getElementById('genBtnLabel');
+  btn.disabled = true;
+  label.textContent = 'Generando…';
+
+  await new Promise(r=>setTimeout(r, 260)); // breve espera para reflejar el cálculo del motor de IA
+
+  const risk = parseInt(slider.value);
+  const outlook = document.getElementById('outlook').value;
+  const asset = document.getElementById('asset').value;
+
+  let filtered = strategyData.strategies.filter(s => s.outlooks.includes(outlook));
+  if(filtered.length < 3) filtered = strategyData.strategies.slice();
+
+  if(risk <= 3) filtered = filtered.filter(s=>s.riskLevel !== 'High').slice(0,3);
+  else if(risk <= 6) filtered = filtered.slice(0,4);
+  else filtered = strategyData.strategies.slice(0,6);
+
+  document.getElementById('strategiesGrid').innerHTML = filtered.map(s=>`
+    <div class="strat-card" id="card_${s.id}" onclick="selectCard('${s.id}')">
+      <div class="strat-accent" style="background:${s.accentColor}"></div>
+      <div class="strat-header">
+        <div>
+          <div class="strat-name">${s.name}</div>
+          <div class="strat-type">${s.type}</div>
+        </div>
+        <span class="risk-badge" style="background:${s.accentColor}26;color:${s.accentColor}">${s.riskLevel} risk</span>
+      </div>
+      <div class="strat-metrics">
+        <div><div class="metric-lbl">Riesgo máx.</div><div class="metric-val red">${fmtMoney(s.maxRisk)}</div></div>
+        <div><div class="metric-lbl">Ganancia máx.</div><div class="metric-val green">${fmtMoney(s.maxProfit)}</div></div>
+        <div><div class="metric-lbl">Punto eq.</div><div class="metric-val">${s.breakeven}</div></div>
+        <div><div class="metric-lbl">Prob. éxito</div><div class="metric-val amber">${s.winProbability!=null ? (s.winProbability*100).toFixed(0)+'%' : 'N/A'}</div></div>
+      </div>
+      <div class="payoff-wrap">
+        <div class="payoff-lbl">Payoff al vencimiento — ${asset}</div>
+        <div style="position:relative;height:70px;"><canvas id="payoff_${s.id}" role="img" aria-label="${s.name} diagrama de payoff"></canvas></div>
+      </div>
+      <div class="score-bar">
+        <div class="score-row">
+          <span style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px">AI fit score</span>
+          <div class="score-track"><div class="score-fill" style="width:${s.score}%;background:${s.accentColor}"></div></div>
+          <span class="score-num">${s.score}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  setTimeout(()=>{ filtered.forEach(s=>drawPayoff('payoff_'+s.id, s)); }, 30);
+
+  btn.disabled = false;
+  label.textContent = 'Generar estrategias';
+}
+
+function selectCard(id){
+  document.querySelectorAll('.strat-card').forEach(c=>c.classList.remove('active'));
+  const el = document.getElementById('card_'+id);
+  if(el) el.classList.add('active');
+}
+
+loadStrategyData();
+</script>
+</body>
+</html>
