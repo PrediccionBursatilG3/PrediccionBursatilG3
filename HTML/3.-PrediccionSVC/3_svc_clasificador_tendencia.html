@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Invest PRO — Clasificador SVC de Tendencia Bursátil</title>
+<title>InvestAI — Clasificador SVC de Tendencia Bursátil</title>
 
 <!-- Chart.js desde CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
 <style>
   /* =============================================
@@ -343,17 +346,140 @@
     .metricas-grid { grid-template-columns: 1fr 1fr; }
     .svc-params { grid-template-columns: 1fr 1fr; }
   }
+
+/* =====================================================================
+   InvestAI · COMPONENTE DE NAVEGACIÓN LATERAL (compartido en las 11 GUI)
+===================================================================== */
+.ivnav-overlay{display:none;position:fixed;inset:0;background:rgba(5,7,14,.6);z-index:990;}
+.ivnav-overlay.activo{display:block;}
+.ivnav{
+  --iv-bg:#0c0f18; --iv-surface:#141a28; --iv-surface-3:#212a40;
+  --iv-border:rgba(255,255,255,.08); --iv-text:#eef1f8; --iv-text-dim:#a8b1c7; --iv-text-mute:#6c7690;
+  --iv-violet:#7c5cff; --iv-violet-soft:rgba(124,92,255,.16); --iv-teal:#1fe0c4;
+  width:228px;flex-shrink:0;background:var(--iv-bg);
+  border-right:1px solid var(--iv-border);height:100vh;
+  position:sticky;top:0;left:0;display:flex;flex-direction:column;
+  padding:18px 13px 14px;z-index:1000;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+.ivnav-brand{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;border-bottom:1px solid var(--iv-border);margin-bottom:12px;}
+.ivnav-glyph{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:800;font-size:15px;color:#0b0d14;flex-shrink:0;}
+.ivnav-name{font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:15px;color:var(--iv-text);letter-spacing:-.2px;line-height:1.15;}
+.ivnav-name b{font-weight:800;}
+.ivnav-tag{font-size:9.5px;color:var(--iv-text-mute);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
+.ivnav-close{display:none;}
+.ivnav-menu{flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.ivnav-menu::-webkit-scrollbar{width:4px;}
+.ivnav-menu::-webkit-scrollbar-thumb{background:var(--iv-surface-3);border-radius:4px;}
+.ivnav-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--iv-text-dim);font-size:12.5px;font-weight:500;text-decoration:none;position:relative;transition:background .15s,color .15s;}
+.ivnav-link svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
+.ivnav-link:hover{background:var(--iv-surface);color:var(--iv-text);}
+.ivnav-link.activo{background:linear-gradient(90deg,var(--iv-violet-soft),transparent);color:var(--iv-text);font-weight:600;}
+.ivnav-link.activo::before{content:"";position:absolute;left:-13px;top:5px;bottom:5px;width:3px;border-radius:0 4px 4px 0;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));}
+.ivnav-link.activo svg{opacity:1;color:var(--iv-teal);}
+.ivnav-footer{border-top:1px solid var(--iv-border);padding-top:11px;margin-top:8px;display:flex;align-items:center;gap:9px;}
+.ivnav-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3b4361,#1c2236);display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:11.5px;color:var(--iv-text-dim);flex-shrink:0;border:1px solid var(--iv-border);}
+.ivnav-user{flex:1;min-width:0;}
+.ivnav-uname{font-size:12px;font-weight:600;color:var(--iv-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ivnav-urole{font-size:10px;color:var(--iv-text-mute);}
+.ivnav-logout{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--iv-text-mute);transition:background .15s,color .15s;}
+.ivnav-logout svg{width:15px;height:15px;}
+.ivnav-logout:hover{background:rgba(244,63,94,.15);color:#f43f5e;}
+
+.ivnav-burger{display:none;background:none;border:none;color:inherit;cursor:pointer;padding:6px;margin-right:2px;flex-shrink:0;}
+.ivnav-burger svg{width:19px;height:19px;display:block;}
+
+body{display:flex;min-height:100vh;}
+.ivnav-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+@media (max-width:900px){
+  .ivnav{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s ease;box-shadow:30px 0 60px rgba(0,0,0,.5);}
+  .ivnav.abierto{transform:translateX(0);}
+  .ivnav-close{display:flex;margin-left:auto;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;color:var(--iv-text-mute);cursor:pointer;}
+  .ivnav-burger{display:flex;align-items:center;justify-content:center;}
+}
+
 </style>
 </head>
 <body>
+<div class="ivnav-overlay" id="ivnavOverlay" onclick="ivNavToggle(false)"></div>
+<aside class="ivnav" id="ivnav">
+  <div class="ivnav-brand">
+    <div class="ivnav-glyph">AI</div>
+    <div style="flex:1">
+      <div class="ivnav-name"><b>Invest</b>AI</div>
+      <div class="ivnav-tag">iDeSo · FISI · UNMSM</div>
+    </div>
+    <div class="ivnav-close" onclick="ivNavToggle(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+  </div>
+  <nav class="ivnav-menu">
+    <a class="ivnav-link " href="../9.-DashboardCompleto/09_dashboard_completo_v2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="ivnav-link " href="../2.-Visualizacion/Html_2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9m6 8V5m6 12v-6m6 6V3"/></svg>
+      Visualización de Mercado
+    </a>
+    <a class="ivnav-link activo" href="../3.-PrediccionSVC/3_svc_clasificador_tendencia_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>
+      Predicción SVC
+    </a>
+    <a class="ivnav-link " href="../4.-PrediccionLSTM/4_lstm_regressor_prediccion_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-6 4 3 6-8"/><path d="M16 12l5-7" stroke-dasharray="2 2"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
+      Predicción LSTM
+    </a>
+    <a class="ivnav-link " href="../5.-AnalisisNLP/Html_5.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h9M8 13h9M8 17h5"/></svg>
+      Análisis NLP
+    </a>
+    <a class="ivnav-link " href="../6.-GeneracionEstrategias/6__Generacion_de_estrategias.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.2L5.5 16a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.2V3"/></svg>
+      Estrategias IA
+    </a>
+    <a class="ivnav-link " href="../7.-GestionPortafolio/7__Gestion_de_portafolio.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M21 12a9 9 0 0 1-9 9V12z"/></svg>
+      Portafolio
+    </a>
+    <a class="ivnav-link " href="../8.-EnvioSenalesBroker/8_señales_broker.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10a8 8 0 0 1 16 0v9M2 19h20"/></svg>
+      Señales &amp; Broker
+    </a>
+    <a class="ivnav-link " href="../10.-ConsolaModelosIA/10_consola_modelos_ia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M19 5l-2 2M5 19l2-2M19 19l-2-2"/></svg>
+      Consola Modelos IA
+    </a>
+    <a class="ivnav-link " href="../11.-ReportesBacktesting/11_reporte_backtesting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
+      Backtesting
+    </a>
+  </nav>
+  <div class="ivnav-footer">
+    <div class="ivnav-avatar">IA</div>
+    <div class="ivnav-user">
+      <div class="ivnav-uname">Inversionista</div>
+      <div class="ivnav-urole">Cuenta activa</div>
+    </div>
+    <a class="ivnav-logout" href="../1.-Autenticacion/01_autenticacion_v2.html" title="Cerrar sesión">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </a>
+  </div>
+</aside>
+
+<div class="ivnav-content">
 
 <!-- =============================================
      NAVBAR
 ============================================= -->
 <nav class="navbar">
   <div class="nav-brand">
+    <button class="ivnav-burger" onclick="ivNavToggle(true)" aria-label="Abrir menú de navegación">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="logo-badge">AI</div>
-    <div class="logo"><span>AI</span> Invest PRO</div>
+    <div class="logo"><span>Invest</span>AI</div>
     <div class="modulo">Módulo SVC — Clasificador de Tendencia Bursátil</div>
   </div>
   <div class="nav-right">
@@ -437,12 +563,13 @@
   </div><!-- /fila-bottom -->
 
   <div class="footer-note">
-    <strong>AI Invest PRO</strong> — Sistema Web para Apoyo en Decisiones de Inversión usando Inteligencia Artificial ·
+    <strong>InvestAI</strong> — Sistema Web para Apoyo en Decisiones de Inversión usando Inteligencia Artificial ·
     iDeSo · FISI · UNMSM · Grupo 10 · 2026-II ·
     Datos reales obtenidos desde la API FastAPI (yfinance + modelo SVC entrenado) — no constituyen asesoramiento financiero real.
   </div>
 
 </main>
+</div><!-- /ivnav-content -->
 
 <!-- =============================================
      JAVASCRIPT — LÓGICA Y RENDERIZADO
@@ -820,5 +947,13 @@
     cargarTicker('AAPL');
   });
 </script>
+
+<script>
+function ivNavToggle(abrir){
+  document.getElementById('ivnav').classList.toggle('abierto', abrir);
+  document.getElementById('ivnavOverlay').classList.toggle('activo', abrir);
+}
+</script>
+
 </body>
 </html>
