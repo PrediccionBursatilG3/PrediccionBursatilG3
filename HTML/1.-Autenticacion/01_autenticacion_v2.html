@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPBI — Acceso al Sistema</title>
+<title>InvestAI — Acceso al Sistema</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   SPBI · Módulo 01 — Autenticación de Usuario
+   InvestAI · Módulo 01 — Autenticación de Usuario
    Entregable 5: fetch() a /api/salud (FastAPI)
    Grupo 10 · UNMSM · FISI · iDeSo 2026-II
 ═══════════════════════════════════════════════════════════════ */
@@ -17,8 +17,8 @@
   --bg4:       #1a2340;
   --border:    rgba(255,255,255,.07);
   --border2:   rgba(255,255,255,.14);
-  --accent:    #3b82f6;
-  --accent2:   #60a5fa;
+  --accent:    #7c5cff;
+  --accent2:   #9b7bff;
   --gold:      #f59e0b;
   --gold2:     #fcd34d;
   --green:     #10b981;
@@ -59,7 +59,7 @@ body {
   content: '';
   position: absolute; top: -100px; right: -100px;
   width: 420px; height: 420px;
-  border: 1px solid rgba(59,130,246,.12);
+  border: 1px solid rgba(124,92,255,.12);
   border-radius: 50%;
 }
 .panel-left::after {
@@ -72,7 +72,7 @@ body {
 .geo-inner {
   position: absolute; top: -20px; right: -20px;
   width: 260px; height: 260px;
-  border: 1px solid rgba(59,130,246,.07);
+  border: 1px solid rgba(124,92,255,.07);
   border-radius: 50%;
 }
 
@@ -214,7 +214,7 @@ input::placeholder { color:var(--text3); }
 input:focus, select:focus {
   border-color: var(--accent);
   background: var(--bg4);
-  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.12);
 }
 input.error { border-color: var(--red); }
 .err-msg { font-size:11.5px; color:var(--red); margin-top:5px; display:none; }
@@ -238,8 +238,8 @@ input.error { border-color: var(--red); }
 .perfil-card:hover { border-color:var(--accent); background:var(--bg4); }
 .perfil-card.sel {
   border-color:var(--accent);
-  background: rgba(59,130,246,.1);
-  box-shadow: 0 0 0 2px rgba(59,130,246,.2);
+  background: rgba(124,92,255,.1);
+  box-shadow: 0 0 0 2px rgba(124,92,255,.2);
 }
 .perfil-card .ico  { font-size:22px; margin-bottom:5px; }
 .perfil-card .lbl  { font-size:10.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.4px; }
@@ -261,16 +261,16 @@ input.error { border-color: var(--red); }
 /* Botón principal */
 .btn-main {
   width:100%; padding:13px;
-  background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #5b3fd9 100%);
   color:#fff; border:none; border-radius:var(--radius);
   font-size:15px; font-weight:700; cursor:pointer;
   font-family:inherit; letter-spacing:.3px;
-  box-shadow: 0 6px 20px rgba(59,130,246,.3);
+  box-shadow: 0 6px 20px rgba(124,92,255,.3);
   transition: transform .15s, box-shadow .15s, opacity .2s;
 }
 .btn-main:hover:not(:disabled) {
   transform:translateY(-2px);
-  box-shadow:0 10px 28px rgba(59,130,246,.45);
+  box-shadow:0 10px 28px rgba(124,92,255,.45);
 }
 .btn-main:active:not(:disabled) { transform:translateY(0); }
 .btn-main:disabled { opacity:.5; cursor:not-allowed; }
@@ -364,7 +364,7 @@ input.error { border-color: var(--red); }
   .form-title { font-size:20px; }
   .form-footer { position:fixed; bottom:0; left:0; right:0; background:var(--bg2); padding:10px 16px; border-top:1px solid var(--border); font-size:10px; }
   .panel-right::before {
-    content:'📈 SPBI';
+    content:'📈 InvestAI';
     display:block; font-size:18px; font-weight:800;
     color:var(--accent2); letter-spacing:1px;
     margin-bottom:20px; text-align:center;
@@ -381,8 +381,8 @@ input.error { border-color: var(--red); }
   <div class="brand-logo">
     <div class="brand-icon">📈</div>
     <div class="brand-text">
-      <div class="sigla">SPBI</div>
-      <div class="nombre">Sistema de Predicción Bursátil Inteligente</div>
+      <div class="sigla">InvestAI</div>
+      <div class="nombre">Sistema Web de Apoyo en Decisiones de Inversión con IA</div>
     </div>
   </div>
 
@@ -431,7 +431,7 @@ input.error { border-color: var(--red); }
     <!-- ══ PANTALLA 1: LOGIN ══ -->
     <div id="s-login" class="screen active">
       <div class="form-title">Bienvenido</div>
-      <div class="form-sub">Ingresa tus credenciales para acceder al sistema SPBI.</div>
+      <div class="form-sub">Ingresa tus credenciales para acceder al sistema InvestAI.</div>
 
       <div class="field">
         <label>Correo electrónico</label>
@@ -473,7 +473,7 @@ input.error { border-color: var(--red); }
     <!-- ══ PANTALLA 2: REGISTRO ══ -->
     <div id="s-registro" class="screen">
       <div class="form-title">Crear Cuenta</div>
-      <div class="form-sub">Completa el formulario para acceder al sistema SPBI.</div>
+      <div class="form-sub">Completa el formulario para acceder al sistema InvestAI.</div>
 
       <div class="field">
         <label>Nombre completo</label>
@@ -536,7 +536,7 @@ input.error { border-color: var(--red); }
 
       <div class="chk-row">
         <input type="checkbox" id="terminos">
-        <span>Acepto los <a href="#">Términos de Uso</a> y la <a href="#">Política de Privacidad</a> del sistema SPBI.</span>
+        <span>Acepto los <a href="#">Términos de Uso</a> y la <a href="#">Política de Privacidad</a> del sistema InvestAI.</span>
       </div>
 
       <button class="btn-main" onclick="doRegistro()">Crear Cuenta</button>
@@ -573,7 +573,7 @@ input.error { border-color: var(--red); }
   </div><!-- /form-container -->
 
   <div class="form-footer">
-    SPBI · Sistema de Predicción Bursátil Inteligente · UNMSM · Grupo 10 · iDeSo 2026-II
+    InvestAI · Sistema Web de Apoyo en Decisiones de Inversión con IA · UNMSM · Grupo 10 · iDeSo 2026-II
   </div>
 </div><!-- /panel-right -->
 
@@ -685,10 +685,16 @@ function doLogin() {
 
   // Mostrar estado del servidor en el flujo de login
   if (!servidorActivo) {
-    alert('⚠️ El servidor FastAPI no está disponible.\n\nEn producción, el login requiere conexión activa al servidor.\nPara la demo, puedes continuar igualmente.');
+    console.warn('Servidor FastAPI no disponible — continuando en modo demo.');
   }
 
-  alert(`✅ Credenciales válidas.\n\nServidor API: ${servidorActivo ? 'activo ✅' : 'no disponible ⚠️'}\n\nRedirigiendo al Dashboard SPBI...`);
+  // Credenciales válidas → redirigir al Dashboard principal de InvestAI
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Ingresando…';
+  setTimeout(() => {
+    window.location.href = '../9.-DashboardCompleto/09_dashboard_completo_v2.html';
+  }, 450);
 }
 
 /* ══ REGISTRO ══ */
