@@ -3,355 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InvestAI · Centro de Interfaces</title>
-<meta name="description" content="Índice de navegación de las 11 interfaces GUI del Sistema Web de Apoyo en Decisiones de Inversión con IA — iDeSo, UNMSM, FISI.">
+<meta http-equiv="refresh" content="0; url=HTML/1.-Autenticacion/01_autenticacion_v2.html">
+<title>InvestAI — Sistema Web de Apoyo en Decisiones de Inversión con IA</title>
+<meta name="description" content="InvestAI · Sistema Web de Apoyo en Decisiones de Inversión con IA — iDeSo, UNMSM, FISI.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    --navy-950:#0c1726;
-    --navy-900:#101f33;
-    --navy-800:#1f3864;
-    --gold:#c5961a;
-    --gold-soft:#e3b548;
-    --ink-100:#f5f2ea;
-    --ink-300:#cbd2dc;
-    --ink-500:#8c98ab;
-    --line:rgba(245,242,234,0.12);
-    --up:#36b27e;
-    --down:#d2654f;
-    --radius:2px;
-
-    --display:'Newsreader', Georgia, 'Times New Roman', serif;
-    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    --sans:'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+    --bg:#0c0f18; --surface:#141a28;
+    --border:rgba(255,255,255,.08);
+    --text:#eef1f8; --text-dim:#a8b1c7; --text-mute:#6c7690;
+    --violet:#7c5cff; --teal:#1fe0c4; --gold:#f59e0b;
   }
-
   *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
+  html,body{ height:100%; margin:0; }
   body{
-    margin:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:
-      radial-gradient(900px 480px at 85% -10%, rgba(197,150,26,0.10), transparent 60%),
-      var(--navy-950);
-    color:var(--ink-100);
-    font-family:var(--sans);
-    -webkit-font-smoothing:antialiased;
+      radial-gradient(900px 480px at 85% -10%, rgba(124,92,255,0.14), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    gap:22px;
   }
-
-  a{ color:inherit; }
-  :focus-visible{ outline:2px solid var(--gold-soft); outline-offset:3px; }
-
-  /* ── TICKER TAPE ───────────────────────────────────── */
-  .ticker{
-    background:var(--navy-900);
-    border-bottom:1px solid var(--line);
-    overflow:hidden;
-    white-space:nowrap;
-    padding:9px 0;
+  .glyph{
+    width:58px; height:58px; border-radius:16px;
+    background:linear-gradient(135deg, var(--teal), var(--violet));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Sora', system-ui, sans-serif; font-weight:800; font-size:24px; color:#0b0d14;
+    box-shadow:0 10px 32px rgba(124,92,255,.35);
+    animation:pulse 1.8s ease-in-out infinite;
   }
-  .ticker__track{
-    display:inline-flex;
-    gap:2.5rem;
-    padding-left:2.5rem;
-    animation:scroll 38s linear infinite;
-    font-family:var(--mono);
-    font-size:0.74rem;
-    letter-spacing:0.04em;
-    color:var(--ink-500);
-  }
-  .ticker__track span b{ color:var(--gold-soft); font-weight:500; }
-  .ticker__track .up{ color:var(--up); }
-  @keyframes scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
-  @media (prefers-reduced-motion: reduce){
-    .ticker__track{ animation:none; }
-  }
-
-  /* ── MASTHEAD ──────────────────────────────────────── */
-  header.masthead{
-    max-width:1080px;
-    margin:0 auto;
-    padding:clamp(2.5rem, 6vw, 4.5rem) 1.5rem clamp(2rem, 4vw, 3rem);
-  }
-  .eyebrow{
-    font-family:var(--mono);
-    font-size:0.72rem;
-    letter-spacing:0.16em;
-    text-transform:uppercase;
-    color:var(--gold-soft);
-    display:flex;
-    align-items:center;
-    gap:0.6rem;
-  }
-  .eyebrow::before{
-    content:"";
-    width:7px; height:7px;
-    border-radius:50%;
-    background:var(--gold-soft);
-    box-shadow:0 0 0 3px rgba(197,150,26,0.18);
-  }
+  @keyframes pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
   h1{
-    font-family:var(--display);
-    font-weight:600;
-    font-size:clamp(2.4rem, 6vw, 4rem);
-    line-height:1.04;
-    margin:0.7rem 0 0.9rem;
-    letter-spacing:-0.01em;
+    font-family:'Sora', system-ui, sans-serif; font-weight:700; font-size:1.4rem;
+    margin:0; letter-spacing:-.2px;
   }
-  h1 em{
-    font-style:italic;
-    font-weight:500;
-    color:var(--ink-300);
+  h1 b{ font-weight:800; }
+  p{
+    margin:0; font-size:.85rem; color:var(--text-mute);
+    letter-spacing:.02em; text-align:center; max-width:26em;
   }
-  .lede{
-    font-size:1.05rem;
-    line-height:1.6;
-    color:var(--ink-300);
-    max-width:42em;
-    margin:0 0 1.6rem;
+  .loading-row{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Inter', sans-serif; font-size:.78rem; color:var(--text-dim);
   }
-  .meta-row{
-    display:flex;
-    flex-wrap:wrap;
-    gap:0.5rem 1.4rem;
-    font-family:var(--mono);
-    font-size:0.75rem;
-    color:var(--ink-500);
-    border-top:1px solid var(--line);
-    padding-top:1rem;
-  }
-  .meta-row strong{ color:var(--ink-300); font-weight:500; }
-  #status-summary{ color:var(--gold-soft); }
-
-  /* ── GRID ──────────────────────────────────────────── */
-  main{
-    max-width:1080px;
-    margin:0 auto;
-    padding:0 1.5rem 5rem;
-  }
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));
-    gap:1px;
-    background:var(--line);
-    border:1px solid var(--line);
-  }
-  .card{
-    background:var(--navy-950);
-    padding:1.6rem 1.5rem 1.5rem;
-    display:flex;
-    flex-direction:column;
-    gap:0.9rem;
-    text-decoration:none;
-    color:inherit;
-    position:relative;
-    transition:background 0.18s ease;
-  }
-  .card:hover, .card:focus-visible{
-    background:var(--navy-900);
-  }
-  .card__top{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:0.5rem;
-  }
-  .code{
-    font-family:var(--mono);
-    font-size:0.72rem;
-    letter-spacing:0.06em;
-    color:var(--ink-500);
-  }
-  .badge{
-    font-family:var(--mono);
-    font-size:0.65rem;
-    letter-spacing:0.05em;
-    text-transform:uppercase;
-    padding:0.18rem 0.5rem;
-    border-radius:999px;
-    border:1px solid currentColor;
-    white-space:nowrap;
-  }
-  .badge.unknown{ color:var(--ink-500); }
-  .badge.live{ color:var(--up); }
-  .badge.pending{ color:var(--down); }
-
-  .card h2{
-    font-family:var(--display);
-    font-size:1.32rem;
-    font-weight:500;
-    margin:0;
-    line-height:1.25;
-  }
-  .card p{
-    font-size:0.87rem;
-    line-height:1.55;
-    color:var(--ink-500);
-    margin:0;
-    flex-grow:1;
-  }
-  .card__foot{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-top:0.3rem;
-    font-family:var(--mono);
-    font-size:0.72rem;
-    color:var(--ink-500);
-  }
-  .card__foot .file{ overflow:hidden; text-overflow:ellipsis; }
-  .card__foot .go{
-    color:var(--gold-soft);
-    flex-shrink:0;
-    transition:transform 0.15s ease;
-  }
-  .card:hover .go{ transform:translateX(3px); }
-
-  /* ── FOOTER ────────────────────────────────────────── */
-  footer{
-    border-top:1px solid var(--line);
-    padding:2.2rem 1.5rem 3rem;
-  }
-  footer .inner{
-    max-width:1080px;
-    margin:0 auto;
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:space-between;
-    gap:1rem;
-    font-family:var(--mono);
-    font-size:0.72rem;
-    color:var(--ink-500);
-  }
-  footer strong{ color:var(--ink-300); font-weight:500; }
-
-  @media (max-width:640px){
-    .grid{ grid-template-columns:1fr; }
-  }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--violet); animation:blink 1.2s infinite; }
+  .dot:nth-child(2){ animation-delay:.2s; }
+  .dot:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  a.fallback{ color:var(--violet); font-weight:600; text-decoration:none; }
+  a.fallback:hover{ text-decoration:underline; }
 </style>
 </head>
 <body>
 
-<div class="ticker" aria-hidden="true">
-  <div class="ticker__track" id="ticker-track"><!-- generado por JS --></div>
-</div>
-
-<header class="masthead">
-  <p class="eyebrow">iDeSo · UNMSM · FISI · Semana 10 · Grupo 10</p>
-  <h1>Invest<em>AI</em></h1>
-  <p class="lede">
-    Centro de navegación de las once interfaces gráficas del Sistema Web de Apoyo en
-    Decisiones de Inversión con Inteligencia Artificial. Cada tarjeta enlaza al archivo
-    HTML correspondiente para su revisión y despliegue mediante GitHub Pages.
-  </p>
-  <div class="meta-row">
-    <span><strong>Módulos:</strong> 11</span>
-    <span id="status-summary">verificando estado…</span>
-    <span><strong>Stack:</strong> HTML · CSS · JS</span>
-    <span><strong>Despliegue:</strong> GitHub Pages</span>
+  <div class="glyph">AI</div>
+  <h1><b>Invest</b>AI</h1>
+  <p>Sistema Web de Apoyo en Decisiones de Inversión con Inteligencia Artificial<br>iDeSo · UNMSM · FISI · Grupo 10 · 2026-II</p>
+  <div class="loading-row">
+    Cargando acceso al sistema
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
   </div>
-</header>
 
-<main>
-  <div class="grid" id="grid"><!-- generado por JS --></div>
-</main>
-
-<footer>
-  <div class="inner">
-    <span><strong>Sistema Web de Apoyo en Decisiones de Inversión usando IA</strong> — Trabajo Grupal Sem. 10</span>
-    <span>Prof. E. D. Cancho-Rodríguez, MBA (GWU) — DAISW · FISI · UNMSM — Lima, Perú 2026</span>
-  </div>
-</footer>
+  <noscript>
+    <p>Activa JavaScript o continúa manualmente:
+      <a class="fallback" href="HTML/1.-Autenticacion/01_autenticacion_v2.html">Ir al inicio de sesión →</a>
+    </p>
+  </noscript>
 
 <script>
-  // ── Definición de los 11 módulos (Cap. 6 del documento de especificaciones) ──
-  const MODULES = [
-    { code:"GUI-01", title:"Autenticación de Usuario", file:"HTML/1.-Autenticacion/01_autenticacion_v2.html",
-      desc:"Inicio de sesión, registro de cuenta y recuperación de contraseña." },
-    { code:"GUI-02", title:"Visualización de Datos del Mercado", file:"HTML/2.-Visualizacion/Html_2.html",
-      desc:"Velas japonesas, indicadores SMA/EMA/Bollinger para acciones y criptomonedas." },
-    { code:"GUI-03", title:"Predicción de Subidas con SVM", file:"HTML/3.-PrediccionSVC/3_svc_clasificador_tendencia.html",
-      desc:"Señales BUY / SELL / HOLD generadas por el clasificador SVC." },
-    { code:"GUI-04", title:"Pronóstico de Precios con LSTM", file:"HTML/4.-PrediccionLSTM/4_lstm_regressor_prediccion.html",
-      desc:"Proyección de precios futuros con LSTM y el modelo híbrido ARIMA-LSTM." },
-    { code:"GUI-05", title:"Análisis de Noticias con NLP", file:"HTML/5.-AnalisisNLP/Html_5.html",
-      desc:"Sentimiento BULLISH / BEARISH / NEUTRAL extraído de noticias financieras." },
-    { code:"GUI-06", title:"Generación de Estrategias de Inversión", file:"HTML/6.-GeneracionEstrategias/6. Generacion de estrategias.html",
-      desc:"Recomendaciones de compra/venta y estrategias de opciones financieras." },
-    { code:"GUI-07", title:"Gestión de Portafolio", file:"HTML/7.-GestionPortafolio/7. Gestion de portafolio.html",
-      desc:"Distribución de activos, posiciones abiertas, P&L y curva de equity." },
-    { code:"GUI-08", title:"Envío de Señales al Broker", file:"HTML/8.-EnvioSenalesBroker/8.señales_broker.html",
-      desc:"Confirmación de órdenes de mercado, límite o stop hacia Interactive Brokers." },
-    { code:"GUI-09", title:"Dashboard Completo de Resultados", file:"HTML/9.-DashboardCompleto/09_dashboard_completo_v2.html",
-      desc:"Panel consolidado con predicciones, señales y métricas de todos los módulos." },
-    { code:"GUI-10", title:"Consola de Control de Modelos de IA", file:"HTML/10.-ConsolaModelosIA/10_consola_modelos_ia.html",
-      desc:"Selección y configuración de los 16 modelos predictivos del sistema." },
-    { code:"GUI-11", title:"Reportes de Backtesting", file:"HTML/11.-ReportesBacktesting/11.reporte_backtesting.html",
-      desc:"Métricas históricas de desempeño de estrategias simuladas con VectorBT." },
-  ];
-
-  const grid = document.getElementById("grid");
-  const tickerTrack = document.getElementById("ticker-track");
-  const summary = document.getElementById("status-summary");
-  const isLocalFile = location.protocol === "file:";
-
-  // ── Construye las tarjetas ──
-  MODULES.forEach((m, i) => {
-    const card = document.createElement("a");
-    card.className = "card";
-    card.href = m.file;
-    card.id = "card-" + i;
-    card.innerHTML = `
-      <div class="card__top">
-        <span class="code">${m.code}</span>
-        <span class="badge unknown" data-badge>${isLocalFile ? "local" : "verificando"}</span>
-      </div>
-      <h2>${m.title}</h2>
-      <p>${m.desc}</p>
-      <div class="card__foot">
-        <span class="file">${m.file}</span>
-        <span class="go">Abrir →</span>
-      </div>`;
-    grid.appendChild(card);
-  });
-
-  // ── Ticker tape (duplicado x2 para loop continuo) ──
-  function buildTicker(){
-    const items = MODULES.map(m => `<span>${m.code} · ${m.title.toUpperCase()}</span>`);
-    tickerTrack.innerHTML = items.concat(items).join("<span>&nbsp;&nbsp;◆&nbsp;&nbsp;</span>");
-  }
-  buildTicker();
-
-  // ── Verifica en vivo si cada archivo existe (solo si servido por http/https) ──
-  async function checkStatus(){
-    if (isLocalFile){
-      summary.textContent = "modo local — abrir vía GitHub Pages para verificar enlaces";
-      return;
-    }
-    let live = 0;
-    await Promise.all(MODULES.map(async (m, i) => {
-      const badge = document.querySelector(`#card-${i} [data-badge]`);
-      try{
-        const res = await fetch(m.file, { method:"HEAD", cache:"no-store" });
-        if (res.ok){
-          badge.textContent = "en vivo";
-          badge.className = "badge live";
-          live++;
-        } else {
-          badge.textContent = "pendiente";
-          badge.className = "badge pending";
-        }
-      } catch(e){
-        badge.textContent = "pendiente";
-        badge.className = "badge pending";
-      }
-    }));
-    summary.innerHTML = `<strong>${live}</strong> de ${MODULES.length} interfaces en vivo`;
-  }
-  checkStatus();
+  // Redirección inmediata a la pantalla 1 (inicio de sesión)
+  window.location.replace("HTML/1.-Autenticacion/01_autenticacion_v2.html");
 </script>
 
 </body>
