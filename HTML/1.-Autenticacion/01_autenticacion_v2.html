@@ -452,6 +452,18 @@ input.error { border-color: var(--red); }
         <div class="err-msg" id="e-l-pass">La contraseña es obligatoria.</div>
       </div>
 
+      <div class="field" style="margin-top:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;">
+          🔗 URL del Backend ngrok
+          <span style="font-weight:400;color:var(--text-mute,#999);">— configurable también desde cualquier módulo</span>
+        </label>
+        <div class="input-wrap">
+          <span class="input-icon">🌐</span>
+          <input type="url" id="l-apiurl" placeholder="https://xxxx.ngrok-free.app" style="font-family:monospace;font-size:.8rem;" autocomplete="off">
+        </div>
+        <div id="e-l-apiurl" style="font-size:.75rem;color:#1fe0c4;margin-top:4px;display:none;"></div>
+      </div>
+
       <button class="btn-main" id="btn-login" onclick="doLogin()">Iniciar Sesión</button>
       <div class="divider">o continúa con</div>
       <button class="btn-google">
@@ -688,6 +700,15 @@ function doLogin() {
     console.warn('Servidor FastAPI no disponible — continuando en modo demo.');
   }
 
+  // Guardar URL del API si se proporcionó
+  const apiUrlInput = document.getElementById('l-apiurl');
+  if (apiUrlInput && apiUrlInput.value.trim()) {
+    const apiUrl = apiUrlInput.value.trim().replace(/\/+$/, '');
+    localStorage.setItem('INVESTAI_API_URL', apiUrl);
+    const hint = document.getElementById('e-l-apiurl');
+    if (hint) { hint.textContent = '✓ URL guardada'; hint.style.display = 'block'; }
+  }
+
   // Credenciales válidas → redirigir al Dashboard principal de InvestAI
   const btn = document.getElementById('btn-login');
   btn.disabled = true;
@@ -725,6 +746,13 @@ function doRecuperar() {
 
 /* ══ INICIAR: verificar API al cargar ══ */
 verificarAPI();
+
+/* Pre-rellenar URL del API desde localStorage si ya se configuró antes */
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = localStorage.getItem('INVESTAI_API_URL') || '';
+  const inp = document.getElementById('l-apiurl');
+  if (inp && saved) inp.value = saved;
+});
 </script>
 </body>
 </html>
