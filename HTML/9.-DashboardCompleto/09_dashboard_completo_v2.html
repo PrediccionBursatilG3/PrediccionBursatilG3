@@ -374,6 +374,9 @@ body{display:flex;min-height:100vh;}
   .ivnav-burger{display:flex;align-items:center;justify-content:center;}
 }
 
+
+.iv-api-config-btn{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#a8b1c7;font-size:.75rem;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.iv-api-config-btn:hover{background:rgba(255,255,255,.09);}
 </style>
 </head>
 <body>
@@ -453,6 +456,7 @@ body{display:flex;min-height:100vh;}
     </button>
     <div class="nav-brand">
       <div class="logo">📈</div>
+    <button class="iv-api-config-btn" id="iv-api-btn" onclick="ivShowApiModal(inicializar)" title="Configurar backend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="iv-api-status-dot" style="width:7px;height:7px;border-radius:50%;background:#6c7690;display:inline-block;margin-left:2px;"></span></button>
       <span class="sigla">InvestAI</span>
     </div>
     <div class="nav-sep"></div>
@@ -711,13 +715,13 @@ function sma(arr, n) {
 async function fetchNLPData() {
   // Intento 1: API FastAPI en vivo
   try {
-    const data = await apiFetch('/api/nlp');
+    const data = await apiFetch('/api/nlp/BVN');
     return { data, fuente: 'api' };
   } catch (_) {}
 
   // Intento 2: datos_nlp.json generado por el Notebook 5 (mismo directorio)
   try {
-    const res = await fetch('./datos_nlp.json');
+    const res = await fetch(`${ivApiBase()}/api/nlp/BVN`);
     if (res.ok) {
       const data = await res.json();
       return { data, fuente: 'json' };
@@ -988,11 +992,155 @@ inicializar();
 </div><!-- /ivnav-content -->
 
 <script>
+/* =====================================================================
+   InvestAI · API CLIENT (compartido por los 11 módulos)
+   La URL base se guarda en localStorage('INVESTAI_API_URL')
+===================================================================== */
+const _IV_KEY = 'INVESTAI_API_URL';
+
+function ivApiBase() {
+  return (localStorage.getItem(_IV_KEY) || '').replace(/\/+$/, '');
+}
+function ivApiSave(url) {
+  localStorage.setItem(_IV_KEY, (url || '').trim().replace(/\/+$/, ''));
+}
+
+async function ivApiFetch(path, opts = {}) {
+  const base = ivApiBase();
+  if (!base) throw new Error('API_NOT_CONFIGURED');
+  const url = base + path;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json', ...opts.headers },
+    signal: AbortSignal.timeout(opts.timeout || 30000),
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/* Banner flotante que aparece cuando el backend no está configurado
+   o falla. Inyectado automáticamente en el <body>. */
+function ivShowApiModal(onSave) {
+  if (document.getElementById('iv-api-modal')) return;
+  const saved = ivApiBase();
+  const modal = document.createElement('div');
+  modal.id = 'iv-api-modal';
+  modal.innerHTML = `
+    <div class="iv-modal-bg" onclick="ivCloseApiModal()"></div>
+    <div class="iv-modal-box">
+      <div class="iv-modal-icon">🔗</div>
+      <div class="iv-modal-title">Conectar con el Backend InvestAI</div>
+      <p class="iv-modal-desc">
+        El backend FastAPI se ejecuta en Google Colab a través de ngrok.<br>
+        Pega la URL pública que muestra el Colab al iniciarse:
+      </p>
+      <input id="iv-api-input" class="iv-modal-input" type="url"
+        placeholder="https://xxxx-xxxx.ngrok-free.app"
+        value="${saved}" autocomplete="off" spellcheck="false">
+      <p class="iv-modal-hint" id="iv-modal-hint" style="display:none"></p>
+      <div class="iv-modal-actions">
+        <button class="iv-btn-secondary" onclick="ivCloseApiModal()">Cancelar</button>
+        <button class="iv-btn-primary" onclick="ivSaveApiModal()">Guardar y Reconectar</button>
+      </div>
+      <p class="iv-modal-footer">
+        Ruta de logs:&nbsp;<code>/api/salud</code> &nbsp;·&nbsp;
+        <a href="https://dashboard.ngrok.com" target="_blank" rel="noopener">Panel ngrok</a>
+      </p>
+    </div>`;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #iv-api-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:'Inter',system-ui,sans-serif; }
+    .iv-modal-bg { position:absolute; inset:0; background:rgba(5,7,14,.75); backdrop-filter:blur(4px); }
+    .iv-modal-box { position:relative; background:#141a28; border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:32px 28px 24px; width:min(480px,92vw); box-shadow:0 24px 80px rgba(0,0,0,.7); }
+    .iv-modal-icon { font-size:2rem; margin-bottom:10px; }
+    .iv-modal-title { font-family:'Sora',system-ui,sans-serif; font-size:1.15rem; font-weight:700; color:#eef1f8; margin-bottom:8px; }
+    .iv-modal-desc { font-size:.85rem; color:#a8b1c7; line-height:1.55; margin:0 0 16px; }
+    .iv-modal-hint { font-size:.78rem; margin:6px 0 0; }
+    .iv-modal-hint.ok { color:#1fe0c4; }
+    .iv-modal-hint.err { color:#f87171; }
+    .iv-modal-input { width:100%; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#0c0f18; color:#eef1f8; font-family:'IBM Plex Mono',monospace; font-size:.82rem; outline:none; box-sizing:border-box; }
+    .iv-modal-input:focus { border-color:#7c5cff; box-shadow:0 0 0 3px rgba(124,92,255,.2); }
+    .iv-modal-actions { display:flex; gap:10px; margin-top:16px; }
+    .iv-btn-primary { flex:1; padding:10px; border-radius:10px; border:none; background:linear-gradient(135deg,#1fe0c4,#7c5cff); color:#0b0d14; font-weight:700; font-size:.88rem; cursor:pointer; transition:opacity .15s; }
+    .iv-btn-primary:hover { opacity:.85; }
+    .iv-btn-secondary { padding:10px 16px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:transparent; color:#a8b1c7; font-size:.88rem; cursor:pointer; }
+    .iv-modal-footer { font-size:.72rem; color:#6c7690; margin:14px 0 0; text-align:center; }
+    .iv-modal-footer a { color:#7c5cff; }
+    .iv-toast { position:fixed; bottom:24px; right:24px; background:#141a28; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px 18px; font-size:.82rem; color:#eef1f8; z-index:10000; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,.5); transition:opacity .4s; }
+    .iv-toast.ok { border-color:rgba(31,224,196,.3); }
+    .iv-toast.err { border-color:rgba(248,113,113,.3); }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+  document.getElementById('iv-api-input').focus();
+  window._ivApiOnSave = onSave;
+}
+
+function ivCloseApiModal() {
+  const m = document.getElementById('iv-api-modal');
+  if (m) m.remove();
+}
+
+async function ivSaveApiModal() {
+  const inp = document.getElementById('iv-api-input');
+  const hint = document.getElementById('iv-modal-hint');
+  const url = (inp.value || '').trim().replace(/\/+$/, '');
+  if (!url) { hint.textContent = 'Por favor ingresa la URL.'; hint.className = 'iv-modal-hint err'; hint.style.display='block'; return; }
+  inp.disabled = true;
+  hint.textContent = 'Verificando conexión con /api/salud…';
+  hint.className = 'iv-modal-hint'; hint.style.display='block';
+  try {
+    const res = await fetch(url + '/api/salud', { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    ivApiSave(url);
+    hint.textContent = `✓ Conectado · ${data.servicio || 'InvestAI API'} v${data.version || ''}`;
+    hint.className = 'iv-modal-hint ok';
+    setTimeout(() => {
+      ivCloseApiModal();
+      ivToast('✓ Backend conectado correctamente', 'ok');
+      if (typeof window._ivApiOnSave === 'function') window._ivApiOnSave(url);
+    }, 800);
+  } catch (e) {
+    hint.textContent = `✗ No se pudo conectar: ${e.message}. Verifica la URL y que el Colab esté ejecutándose.`;
+    hint.className = 'iv-modal-hint err';
+    inp.disabled = false;
+  }
+}
+
+function ivToast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = `iv-toast ${type}`;
+  t.innerHTML = `<span>${type==='ok'?'✅':'⚠️'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+async function ivCheckHealth(onSuccess, onFail) {
+  const base = ivApiBase();
+  if (!base) { if (onFail) onFail('API_NOT_CONFIGURED'); return; }
+  try {
+    const data = await ivApiFetch('/api/salud', { timeout: 6000 });
+    if (onSuccess) onSuccess(data);
+  } catch (e) {
+    if (onFail) onFail(e.message || 'UNKNOWN');
+  }
+}
+
+
+
+function ivActualizarDot(ok){const d=document.getElementById('iv-api-status-dot');if(d)d.style.background=ok?'#1fe0c4':'#f87171';}
 function ivNavToggle(abrir){
   document.getElementById('ivnav').classList.toggle('abierto', abrir);
   document.getElementById('ivnavOverlay').classList.toggle('activo', abrir);
 }
 </script>
 
+<script>setTimeout(()=>{ivCheckHealth(()=>ivActualizarDot(true),(e)=>{ivActualizarDot(false);if(e==="API_NOT_CONFIGURED")ivToast("Backend no configurado — pulsa 🔗 para conectar","err");});},500);</script>
 </body>
 </html>
