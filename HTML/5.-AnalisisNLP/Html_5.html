@@ -389,8 +389,11 @@ body{display:flex;min-height:100vh;}
 // API URL leída desde localStorage (configurada en login o botón 🔗)
 
 const ENDPOINTS = {
-  // Endpoint correcto de la API InvestAI FastAPI:
-  nlp:     (ticker) => `${ivApiBase()}/api/nlp/${encodeURIComponent(ticker)}`,
+  // Endpoint NLP de la API InvestAI FastAPI:
+  nlp:     (ticker) => `${ivApiBase()}/api/nlp/${encodeURIComponent(ticker || 'ALL')}`,
+  // Aliases usados en el código:
+  news:    (params) => `${ivApiBase()}/api/nlp/${encodeURIComponent((params || '').replace(/^\?ticker=/,'') || 'ALL')}`,
+  summary: ()       => `${ivApiBase()}/api/nlp/ALL`,
 };
 
 // ============================================================
@@ -405,7 +408,11 @@ let charts = { gauge: null, bar: null };
 // ============================================================
 async function apiFetch(url) {
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    }
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
@@ -442,9 +449,9 @@ async function loadNews(params = '') {
 
   try {
     const data = await apiFetch(ENDPOINTS.news(params));
-    // El backend debe devolver: { news: [...], total: N }
+    // El backend devuelve: { noticias: [...], ticker, resumen, metadata }
     // Cada noticia: { id, ticker, titulo, fuente, fecha, texto, compound }
-    allNews = Array.isArray(data) ? data : (data.news || data.results || []);
+    allNews = Array.isArray(data) ? data : (data.noticias || data.news || data.results || []);
     setApiStatus('ok');
   } catch (err) {
     console.warn('Backend no disponible, usando datos demo:', err.message);
