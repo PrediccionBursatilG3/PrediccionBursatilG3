@@ -24,6 +24,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import os
+import json
 import traceback
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -1094,6 +1095,92 @@ def api_lstm(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error interno en LSTM Regressor para '{ticker}': {e}")
+
+
+@app.get("/api/nlp/{ticker}", tags=["Modelos IA"],
+         summary="Análisis de sentimiento NLP (VADER) para un ticker")
+def api_nlp(ticker: str = Path(..., description="Símbolo bursátil, ej. 'BVN'. Use 'ALL' para todos.")):
+    """Devuelve el análisis de sentimiento NLP realizado con VADER sobre noticias
+    del ticker solicitado. Los datos provienen del Notebook 5. Si el ticker no
+    existe en los datos pre-calculados se devuelve 404. Usar 'ALL' para obtener
+    noticias de todos los tickers disponibles."""
+
+    # Ruta al JSON generado por el Notebook 5 — relativa a este archivo
+    _NLP_JSON = os.path.join(os.path.dirname(__file__),
+                             "..", "COLABS",
+                             "5.Análisis de Sentimiento NLP con VADER",
+                             "datos_nlp.json")
+
+    try:
+        with open(_NLP_JSON, encoding="utf-8") as f:
+            datos = json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Archivo datos_nlp.json no encontrado. Ejecuta primero el Notebook 5.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error leyendo datos NLP: {e}")
+
+    ticker_up = ticker.strip().upper()
+    resumen   = datos.get("resumen_por_ticker", {})
+    detalle   = datos.get("detalle_noticias", {})
+
+    if ticker_up == "ALL":
+        # Devuelve todas las noticias aplanadas con campos adaptados al frontend
+        noticias = []
+        counter = 1
+        for tk, items in detalle.items():
+            for item in items:
+                noticias.append({
+                    "id": counter,
+                    "ticker": tk,
+                    "titulo": item.get("titulo", ""),
+                    "fuente": item.get("fuente", ""),
+                    "fecha": item.get("fecha", ""),
+                    "texto": item.get("resumen", item.get("titulo", "")),
+                    "compound": item.get("compound", 0),
+                    "pos": item.get("pos", 0),
+                    "neg": item.get("neg", 0),
+                    "neu": item.get("neu", 0),
+                    "clasificacion": item.get("clasificacion", "Neutral"),
+                })
+                counter += 1
+        return {
+            "ticker": "ALL",
+            "noticias": noticias,
+            "resumen_por_ticker": resumen,
+            "metadata": datos.get("metadata", {}),
+        }
+
+    if ticker_up not in resumen and ticker_up not in detalle:
+        tickers_disp = list(resumen.keys())
+        raise HTTPException(
+            status_code=404,
+            detail=f"Ticker '{ticker_up}' no encontrado en datos NLP. "
+                   f"Disponibles: {tickers_disp}")
+
+    noticias = []
+    for i, item in enumerate(detalle.get(ticker_up, []), start=1):
+        noticias.append({
+            "id": i,
+            "ticker": ticker_up,
+            "titulo": item.get("titulo", ""),
+            "fuente": item.get("fuente", ""),
+            "fecha": item.get("fecha", ""),
+            "texto": item.get("resumen", item.get("titulo", "")),
+            "compound": item.get("compound", 0),
+            "pos": item.get("pos", 0),
+            "neg": item.get("neg", 0),
+            "neu": item.get("neu", 0),
+            "clasificacion": item.get("clasificacion", "Neutral"),
+        })
+
+    return {
+        "ticker": ticker_up,
+        "noticias": noticias,
+        "resumen": resumen.get(ticker_up, {}),
+        "metadata": datos.get("metadata", {}),
+    }
 
 
 @app.get("/", tags=["Salud"], include_in_schema=False)
