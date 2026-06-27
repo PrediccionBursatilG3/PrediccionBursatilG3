@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestAI — Acceso al Sistema</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   InvestAI · Módulo 01 — Autenticación de Usuario
+   Entregable 5: fetch() a /api/salud (FastAPI)
+   Grupo 10 · UNMSM · FISI · iDeSo 2026-II
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0a0f1e;
+  --bg2:       #0f1629;
+  --bg3:       #151d35;
+  --bg4:       #1a2340;
+  --border:    rgba(255,255,255,.07);
+  --border2:   rgba(255,255,255,.14);
+  --accent:    #7c5cff;
+  --accent2:   #9b7bff;
+  --gold:      #f59e0b;
+  --gold2:     #fcd34d;
+  --green:     #10b981;
+  --red:       #ef4444;
+  --text:      #e2e8f0;
+  --text2:     #94a3b8;
+  --text3:     #64748b;
+  --radius:    14px;
+  --trans:     .25s cubic-bezier(.4,0,.2,1);
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg2); }
+::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:4px; }
+
+/* ══ PANEL IZQUIERDO: BRANDING ══ */
+.panel-left {
+  background: linear-gradient(160deg, #060c1a 0%, #0d1e3d 45%, #0f2555 100%);
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  padding: 60px 56px;
+  position: relative; overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+/* Decoración geométrica */
+.panel-left::before {
+  content: '';
+  position: absolute; top: -100px; right: -100px;
+  width: 420px; height: 420px;
+  border: 1px solid rgba(124,92,255,.12);
+  border-radius: 50%;
+}
+.panel-left::after {
+  content: '';
+  position: absolute; bottom: -80px; left: -80px;
+  width: 300px; height: 300px;
+  border: 1px solid rgba(245,158,11,.08);
+  border-radius: 50%;
+}
+.geo-inner {
+  position: absolute; top: -20px; right: -20px;
+  width: 260px; height: 260px;
+  border: 1px solid rgba(124,92,255,.07);
+  border-radius: 50%;
+}
+
+.brand-logo {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 52px; z-index: 1;
+}
+.brand-icon {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 6px 24px rgba(245,158,11,.35);
+}
+.brand-text .sigla {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: 3px; color: var(--text);
+}
+.brand-text .nombre {
+  font-size: 11px; color: var(--text3);
+  letter-spacing: .5px; margin-top: 2px;
+}
+
+.hero-titulo {
+  font-size: 36px; font-weight: 800; color: var(--text);
+  line-height: 1.2; margin-bottom: 18px; z-index: 1;
+  max-width: 380px;
+}
+.hero-titulo span { color: var(--gold2); }
+
+.hero-desc {
+  font-size: 14px; color: var(--text3);
+  line-height: 1.75; max-width: 360px; z-index: 1;
+  margin-bottom: 44px;
+}
+
+.modulos-list { z-index:1; display:flex; flex-direction:column; gap:10px; }
+.modulo-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text2);
+}
+.modulo-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+}
+
+/* Barra de acento inferior */
+.left-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--accent), transparent);
+}
+
+/* ══ INDICADOR DE API ══ */
+.api-indicator {
+  position: absolute; top: 24px; right: 24px; z-index: 10;
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 11.5px; color: var(--text2);
+  transition: all var(--trans);
+}
+.api-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text3); flex-shrink: 0;
+  transition: background var(--trans);
+}
+.api-dot.ok      { background: var(--green); animation: pulse 1.4s infinite; }
+.api-dot.error   { background: var(--red); animation: none; }
+.api-dot.loading { background: var(--gold); animation: pulse 0.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ══ PANEL DERECHO: FORMULARIOS ══ */
+.panel-right {
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 48px 56px;
+  background: var(--bg2);
+  position: relative;
+}
+
+.form-container { width: 100%; max-width: 400px; }
+
+/* Tabs */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border2);
+  margin-bottom: 32px; gap: 2px;
+}
+.tab-btn {
+  flex:1; background:none; border:none;
+  padding: 10px 6px 12px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text3); cursor: pointer;
+  position: relative; transition: color var(--trans);
+  font-family: inherit;
+}
+.tab-btn:hover { color: var(--text2); }
+.tab-btn.active { color: var(--accent2); }
+.tab-btn.active::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Pantallas */
+.screen { display:none; animation: fadeIn .22s ease; }
+.screen.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.form-title { font-size:22px; font-weight:800; color:var(--text); margin-bottom:5px; }
+.form-sub   { font-size:13px; color:var(--text3); margin-bottom:26px; line-height:1.5; }
+
+/* Campos */
+.field { margin-bottom:16px; }
+label {
+  display:block; font-size:11.5px; font-weight:700;
+  color: var(--text2); margin-bottom:6px;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.input-wrap { position:relative; }
+.input-icon {
+  position:absolute; left:13px; top:50%; transform:translateY(-50%);
+  font-size:14px; pointer-events:none; opacity:.4;
+}
+input[type=text],
+input[type=email],
+input[type=password],
+select {
+  width:100%; padding:11px 14px 11px 40px;
+  border: 1.5px solid var(--border2); border-radius: 10px;
+  font-size:14px; color:var(--text);
+  background: var(--bg3); font-family:inherit;
+  transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
+  outline:none;
+}
+input::placeholder { color:var(--text3); }
+input:focus, select:focus {
+  border-color: var(--accent);
+  background: var(--bg4);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.12);
+}
+input.error { border-color: var(--red); }
+.err-msg { font-size:11.5px; color:var(--red); margin-top:5px; display:none; }
+.err-msg.show { display:block; }
+
+/* Pass toggle */
+.pass-toggle {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  cursor:pointer; font-size:15px; opacity:.4;
+  transition:opacity .2s; user-select:none;
+}
+.pass-toggle:hover { opacity:.8; }
+
+/* Perfil de inversor */
+.perfil-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+.perfil-card {
+  border:1.5px solid var(--border2); border-radius:10px;
+  padding:12px 8px; text-align:center; cursor:pointer;
+  transition:all var(--trans); background:var(--bg3);
+}
+.perfil-card:hover { border-color:var(--accent); background:var(--bg4); }
+.perfil-card.sel {
+  border-color:var(--accent);
+  background: rgba(124,92,255,.1);
+  box-shadow: 0 0 0 2px rgba(124,92,255,.2);
+}
+.perfil-card .ico  { font-size:22px; margin-bottom:5px; }
+.perfil-card .lbl  { font-size:10.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.4px; }
+.perfil-card .desc { font-size:10px; color:var(--text3); margin-top:2px; }
+
+/* Checkbox */
+.chk-row {
+  display:flex; align-items:flex-start; gap:10px;
+  margin-bottom:20px; margin-top:4px;
+}
+.chk-row input[type=checkbox] {
+  width:15px; height:15px; margin-top:2px;
+  accent-color:var(--accent); flex-shrink:0;
+}
+.chk-row span { font-size:12.5px; color:var(--text2); line-height:1.5; }
+.chk-row a { color:var(--accent2); font-weight:600; text-decoration:none; }
+.chk-row a:hover { text-decoration:underline; }
+
+/* Botón principal */
+.btn-main {
+  width:100%; padding:13px;
+  background: linear-gradient(135deg, var(--accent) 0%, #5b3fd9 100%);
+  color:#fff; border:none; border-radius:var(--radius);
+  font-size:15px; font-weight:700; cursor:pointer;
+  font-family:inherit; letter-spacing:.3px;
+  box-shadow: 0 6px 20px rgba(124,92,255,.3);
+  transition: transform .15s, box-shadow .15s, opacity .2s;
+}
+.btn-main:hover:not(:disabled) {
+  transform:translateY(-2px);
+  box-shadow:0 10px 28px rgba(124,92,255,.45);
+}
+.btn-main:active:not(:disabled) { transform:translateY(0); }
+.btn-main:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Botón Google */
+.btn-google {
+  width:100%; padding:11px;
+  background:var(--bg3); color:var(--text2);
+  border:1.5px solid var(--border2); border-radius:var(--radius);
+  font-size:13.5px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  margin-top:10px; font-family:inherit;
+  transition: background var(--trans), border-color var(--trans);
+}
+.btn-google:hover { background:var(--bg4); border-color:var(--accent); }
+
+/* Divisor */
+.divider {
+  text-align:center; font-size:12px; color:var(--text3);
+  margin:14px 0; position:relative;
+}
+.divider::before, .divider::after {
+  content:''; position:absolute;
+  top:50%; width:38%; height:1px; background:var(--border2);
+}
+.divider::before { left:0; }
+.divider::after  { right:0; }
+
+/* Links */
+.link-row { text-align:center; margin-top:16px; font-size:12.5px; color:var(--text3); }
+.link-row a { color:var(--accent2); font-weight:600; text-decoration:none; cursor:pointer; }
+.link-row a:hover { text-decoration:underline; }
+
+/* Alerta ok */
+.alert-ok {
+  background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25);
+  border-radius:10px; padding:14px 16px;
+  display:none; align-items:flex-start; gap:12px; margin-bottom:18px;
+}
+.alert-ok.show { display:flex; }
+.alert-ok p { font-size:13px; color:var(--green); line-height:1.5; }
+
+/* Banner de estado del servidor */
+.server-banner {
+  border-radius:10px; padding:10px 14px;
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:20px; font-size:12.5px;
+  border:1px solid; transition:all var(--trans);
+  display:none;
+}
+.server-banner.show { display:flex; }
+.server-banner.ok {
+  background:rgba(16,185,129,.08);
+  border-color:rgba(16,185,129,.25); color:var(--green);
+}
+.server-banner.error {
+  background:rgba(239,68,68,.08);
+  border-color:rgba(239,68,68,.25); color:var(--red);
+}
+.server-banner.loading {
+  background:rgba(245,158,11,.08);
+  border-color:rgba(245,158,11,.25); color:var(--gold);
+}
+
+/* Footer */
+.form-footer {
+  position:absolute; bottom:18px;
+  font-size:10.5px; color:var(--text3); text-align:center;
+}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:900px) {
+  body { grid-template-columns:1fr; }
+  .panel-left { display:none; }
+  .panel-right { padding:40px 32px; min-height:100vh; }
+  .form-container { max-width:460px; }
+}
+@media(max-width:480px) {
+  .panel-right { padding:28px 20px 60px; }
+  .form-container { max-width:100%; }
+  .tabs { gap:0; margin-bottom:22px; }
+  .tab-btn { font-size:11.5px; padding:8px 3px 10px; }
+  input[type=text], input[type=email], input[type=password], select {
+    padding:13px 14px 13px 40px; font-size:16px; border-radius:10px;
+  }
+  .btn-main { padding:15px; font-size:16px; border-radius:12px; }
+  .btn-google { padding:13px; font-size:14px; border-radius:12px; }
+  .perfil-grid { gap:6px; }
+  .perfil-card { padding:14px 6px; }
+  .perfil-card .ico { font-size:24px; }
+  .form-title { font-size:20px; }
+  .form-footer { position:fixed; bottom:0; left:0; right:0; background:var(--bg2); padding:10px 16px; border-top:1px solid var(--border); font-size:10px; }
+  .panel-right::before {
+    content:'📈 InvestAI';
+    display:block; font-size:18px; font-weight:800;
+    color:var(--accent2); letter-spacing:1px;
+    margin-bottom:20px; text-align:center;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ PANEL IZQUIERDO ══ -->
+<div class="panel-left">
+  <div class="geo-inner"></div>
+
+  <div class="brand-logo">
+    <div class="brand-icon">📈</div>
+    <div class="brand-text">
+      <div class="sigla">InvestAI</div>
+      <div class="nombre">Sistema Web de Apoyo en Decisiones de Inversión con IA</div>
+    </div>
+  </div>
+
+  <h1 class="hero-titulo">
+    Decisiones de inversión<br>respaldadas por<br><span>Inteligencia Artificial</span>
+  </h1>
+  <p class="hero-desc">
+    Plataforma de análisis financiero con modelos predictivos de IA para acciones mineras.
+    Datos en tiempo real vía Yahoo Finance y backend FastAPI.
+  </p>
+
+  <div class="modulos-list">
+    <div class="modulo-item"><div class="modulo-dot"></div>SVC · LSTM · BiLSTM · GRU · SimpleRNN</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>NLP VADER · Análisis de sentimiento de noticias</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>Backtesting con VectorBT · Regresor LSTM</div>
+    <div class="modulo-item"><div class="modulo-dot"></div>API REST FastAPI · Google Colab + ngrok</div>
+  </div>
+
+  <div class="left-bar"></div>
+</div>
+
+<!-- ══ PANEL DERECHO ══ -->
+<div class="panel-right">
+
+  <!-- Indicador de API (esquina superior derecha) -->
+  <div class="api-indicator" id="api-indicator">
+    <div class="api-dot loading" id="api-dot"></div>
+    <span id="api-text">Verificando servidor...</span>
+  </div>
+
+  <div class="form-container">
+
+    <!-- Banner de estado del servidor -->
+    <div class="server-banner loading show" id="server-banner">
+      <span>⏳</span>
+      <span id="banner-text">Verificando conexión con la API FastAPI...</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showScreen('login',this)">Iniciar Sesión</button>
+      <button class="tab-btn" onclick="showScreen('registro',this)">Registrarse</button>
+      <button class="tab-btn" onclick="showScreen('recuperar',this)">Recuperar Acceso</button>
+    </div>
+
+    <!-- ══ PANTALLA 1: LOGIN ══ -->
+    <div id="s-login" class="screen active">
+      <div class="form-title">Bienvenido</div>
+      <div class="form-sub">Ingresa tus credenciales para acceder al sistema InvestAI.</div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="email" id="l-email" placeholder="usuario@ejemplo.com">
+        </div>
+        <div class="err-msg" id="e-l-email">Ingresa un correo electrónico válido.</div>
+      </div>
+
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="l-pass" placeholder="••••••••">
+          <span class="pass-toggle" onclick="togglePass('l-pass',this)">👁</span>
+        </div>
+        <div class="err-msg" id="e-l-pass">La contraseña es obligatoria.</div>
+      </div>
+
+      <div class="field" style="margin-top:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;">
+          🔗 URL del Backend ngrok
+          <span style="font-weight:400;color:var(--text-mute,#999);">— configurable también desde cualquier módulo</span>
+        </label>
+        <div class="input-wrap">
+          <span class="input-icon">🌐</span>
+          <input type="url" id="l-apiurl" placeholder="https://xxxx.ngrok-free.app" style="font-family:monospace;font-size:.8rem;" autocomplete="off">
+        </div>
+        <div id="e-l-apiurl" style="font-size:.75rem;color:#1fe0c4;margin-top:4px;display:none;"></div>
+      </div>
+
+      <button class="btn-main" id="btn-login" onclick="doLogin()">Iniciar Sesión</button>
+      <div class="divider">o continúa con</div>
+      <button class="btn-google">
+        <svg width="17" height="17" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.2 33.5 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.1-6.1C34.7 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11 0 20.5-8 20.5-21 0-1.4-.2-2.7-.5-4z"/>
+          <path fill="#34A853" d="M6.3 14.7l7 5.1C15.2 16 19.3 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.1-6.1C34.7 5.1 29.6 3 24 3 16.1 3 9.2 7.9 6.3 14.7z"/>
+          <path fill="#FBBC05" d="M24 45c5.5 0 10.5-1.9 14.4-5l-6.7-5.5C29.7 36.2 27 37 24 37c-5.7 0-10.2-3.5-11.7-8.5l-7 5.4C8.9 40.7 16 45 24 45z"/>
+          <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.8 2.3-2.3 4.3-4.3 5.9l6.7 5.5c3.9-3.6 6.4-8.9 6.4-15.4 0-1.4-.2-2.7-.5-4z"/>
+        </svg>
+        Continuar con Google
+      </button>
+      <div class="link-row">
+        <a onclick="showScreen('recuperar', document.querySelectorAll('.tab-btn')[2])">¿Olvidaste tu contraseña?</a>
+        &nbsp;·&nbsp;
+        <a onclick="showScreen('registro', document.querySelectorAll('.tab-btn')[1])">Crear cuenta</a>
+      </div>
+    </div>
+
+    <!-- ══ PANTALLA 2: REGISTRO ══ -->
+    <div id="s-registro" class="screen">
+      <div class="form-title">Crear Cuenta</div>
+      <div class="form-sub">Completa el formulario para acceder al sistema InvestAI.</div>
+
+      <div class="field">
+        <label>Nombre completo</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="r-nombre" placeholder="Juan Pérez García">
+        </div>
+        <div class="err-msg" id="e-r-nombre">Ingresa tu nombre completo.</div>
+      </div>
+
+      <div class="field">
+        <label>Correo electrónico</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="email" id="r-email" placeholder="usuario@ejemplo.com">
+        </div>
+        <div class="err-msg" id="e-r-email">Ingresa un correo válido.</div>
+      </div>
+
+      <div class="field">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="r-pass" placeholder="Mínimo 8 caracteres">
+          <span class="pass-toggle" onclick="togglePass('r-pass',this)">👁</span>
+        </div>
+        <div class="err-msg" id="e-r-pass">Mínimo 8 caracteres.</div>
+      </div>
+
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="r-pass2" placeholder="Repite tu contraseña">
+          <span class="pass-toggle" onclick="togglePass('r-pass2',this)">👁</span>
+        </div>
+        <div class="err-msg" id="e-r-pass2">Las contraseñas no coinciden.</div>
+      </div>
+
+      <div class="field">
+        <label>Perfil de inversor</label>
+        <div class="perfil-grid">
+          <div class="perfil-card" onclick="selPerfil(this)">
+            <div class="ico">🛡️</div>
+            <div class="lbl">Conservador</div>
+            <div class="desc">Bajo riesgo</div>
+          </div>
+          <div class="perfil-card sel" onclick="selPerfil(this)">
+            <div class="ico">⚖️</div>
+            <div class="lbl">Moderado</div>
+            <div class="desc">Riesgo medio</div>
+          </div>
+          <div class="perfil-card" onclick="selPerfil(this)">
+            <div class="ico">🚀</div>
+            <div class="lbl">Agresivo</div>
+            <div class="desc">Alto riesgo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chk-row">
+        <input type="checkbox" id="terminos">
+        <span>Acepto los <a href="#">Términos de Uso</a> y la <a href="#">Política de Privacidad</a> del sistema InvestAI.</span>
+      </div>
+
+      <button class="btn-main" onclick="doRegistro()">Crear Cuenta</button>
+      <div class="link-row">
+        ¿Ya tienes cuenta? <a onclick="showScreen('login', document.querySelectorAll('.tab-btn')[0])">Inicia sesión aquí</a>
+      </div>
+    </div>
+
+    <!-- ══ PANTALLA 3: RECUPERAR ══ -->
+    <div id="s-recuperar" class="screen">
+      <div class="form-title">Recuperar Acceso</div>
+      <div class="form-sub">Ingresa tu correo y recibirás un enlace para restablecer tu contraseña.</div>
+
+      <div class="alert-ok" id="rec-ok">
+        <span>✅</span>
+        <p><strong>Enlace enviado correctamente.</strong><br>Revisa tu bandeja de entrada. Expira en 30 minutos.</p>
+      </div>
+
+      <div class="field" id="rec-field">
+        <label>Correo electrónico registrado</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="email" id="rec-email" placeholder="usuario@ejemplo.com">
+        </div>
+        <div class="err-msg" id="e-rec">Ingresa un correo válido.</div>
+      </div>
+
+      <button class="btn-main" id="rec-btn" onclick="doRecuperar()">Enviar Enlace de Recuperación</button>
+      <div class="link-row">
+        <a onclick="showScreen('login', document.querySelectorAll('.tab-btn')[0])">Volver al inicio de sesión</a>
+      </div>
+    </div>
+
+  </div><!-- /form-container -->
+
+  <div class="form-footer">
+    InvestAI · Sistema Web de Apoyo en Decisiones de Inversión con IA · UNMSM · Grupo 10 · iDeSo 2026-II
+  </div>
+</div><!-- /panel-right -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN DE LA API FASTAPI
+   Cambiar API_BASE_URL a la URL de ngrok cuando el servidor
+   FastAPI esté corriendo en Google Colab.
+   Ejemplo: const API_BASE_URL = 'https://retold-ashen-passable.ngrok-free.dev';
+═══════════════════════════════════════════════════════════════ */
+const API_BASE_URL = 'https://retold-ashen-passable.ngrok-free.dev'; // ← Reemplazar con URL ngrok en Colab
+
+/* ══ ESTADO DEL SERVIDOR ══ */
+let servidorActivo = false;
+
+/* ══ VERIFICACIÓN DE SALUD DE LA API (/api/salud) ══
+   Se llama al cargar la página.
+   Si el servidor responde OK: desbloquea el botón de login y muestra banner verde.
+   Si falla: muestra banner rojo y mantiene el botón de login funcional
+   (la autenticación final se haría en el servidor, pero dejamos que el usuario
+   intente igualmente para no bloquear el flujo en una demo). */
+async function verificarAPI() {
+  const dot    = document.getElementById('api-dot');
+  const text   = document.getElementById('api-text');
+  const banner = document.getElementById('server-banner');
+  const bannerText = document.getElementById('banner-text');
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(`${API_BASE_URL}/api/salud`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = await res.json();
+      // Servidor activo
+      servidorActivo = true;
+      dot.className = 'api-dot ok';
+      text.textContent = 'API activa';
+      banner.className = 'server-banner ok show';
+      bannerText.innerHTML = `✅ <strong>Servidor FastAPI activo.</strong> ${data.message || ''} · Listo para operar.`;
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+  } catch (err) {
+    // Servidor no disponible
+    servidorActivo = false;
+    dot.className = 'api-dot error';
+    text.textContent = 'API no disponible';
+    banner.className = 'server-banner error show';
+    bannerText.innerHTML = `⚠️ <strong>Servidor no disponible.</strong> Ejecuta el notebook FastAPI en Colab y actualiza la URL de ngrok.`;
+  }
+}
+
+/* ══ NAVEGACIÓN ══ */
+function showScreen(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'recuperar') {
+    document.getElementById('rec-ok').classList.remove('show');
+    document.getElementById('rec-field').style.display = '';
+    document.getElementById('rec-btn').style.display = '';
+  }
+}
+
+/* ══ MOSTRAR/OCULTAR CONTRASEÑA ══ */
+function togglePass(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+/* ══ PERFIL DE INVERSOR ══ */
+function selPerfil(el) {
+  document.querySelectorAll('.perfil-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+/* ══ HELPERS DE VALIDACIÓN ══ */
+const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function setErr(inputId, errId, show) {
+  document.getElementById(inputId).classList.toggle('error', show);
+  document.getElementById(errId).classList.toggle('show', show);
+  return show;
+}
+
+/* ══ LOGIN ══ */
+function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  let ok = true;
+  if (!emailReg.test(email)) { setErr('l-email','e-l-email',true); ok=false; }
+  else setErr('l-email','e-l-email',false);
+  if (!pass) { setErr('l-pass','e-l-pass',true); ok=false; }
+  else setErr('l-pass','e-l-pass',false);
+  if (!ok) return;
+
+  // Mostrar estado del servidor en el flujo de login
+  if (!servidorActivo) {
+    console.warn('Servidor FastAPI no disponible — continuando en modo demo.');
+  }
+
+  // Guardar URL del API si se proporcionó
+  const apiUrlInput = document.getElementById('l-apiurl');
+  if (apiUrlInput && apiUrlInput.value.trim()) {
+    const apiUrl = apiUrlInput.value.trim().replace(/\/+$/, '');
+    localStorage.setItem('INVESTAI_API_URL', apiUrl);
+    const hint = document.getElementById('e-l-apiurl');
+    if (hint) { hint.textContent = '✓ URL guardada'; hint.style.display = 'block'; }
+  }
+
+  // Credenciales válidas → redirigir al Dashboard principal de InvestAI
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Ingresando…';
+  setTimeout(() => {
+    window.location.href = '../9.-DashboardCompleto/09_dashboard_completo_v2.html';
+  }, 450);
+}
+
+/* ══ REGISTRO ══ */
+function doRegistro() {
+  const nombre = document.getElementById('r-nombre').value.trim();
+  const email  = document.getElementById('r-email').value.trim();
+  const pass   = document.getElementById('r-pass').value;
+  const pass2  = document.getElementById('r-pass2').value;
+  const chk    = document.getElementById('terminos').checked;
+  let ok = true;
+  if (!nombre)               { setErr('r-nombre','e-r-nombre',true); ok=false; } else setErr('r-nombre','e-r-nombre',false);
+  if (!emailReg.test(email)) { setErr('r-email','e-r-email',true);  ok=false; } else setErr('r-email','e-r-email',false);
+  if (pass.length < 8)       { setErr('r-pass','e-r-pass',true);    ok=false; } else setErr('r-pass','e-r-pass',false);
+  if (pass !== pass2)        { setErr('r-pass2','e-r-pass2',true);  ok=false; } else setErr('r-pass2','e-r-pass2',false);
+  if (!chk) { alert('Debes aceptar los Términos de Uso para continuar.'); ok=false; }
+  if (ok) alert('✅ Cuenta creada correctamente.\nSe enviará un email de verificación.');
+}
+
+/* ══ RECUPERAR CONTRASEÑA ══ */
+function doRecuperar() {
+  const email = document.getElementById('rec-email').value.trim();
+  if (!emailReg.test(email)) { setErr('rec-email','e-rec',true); return; }
+  setErr('rec-email','e-rec',false);
+  document.getElementById('rec-field').style.display = 'none';
+  document.getElementById('rec-btn').style.display = 'none';
+  document.getElementById('rec-ok').classList.add('show');
+}
+
+/* ══ INICIAR: verificar API al cargar ══ */
+verificarAPI();
+
+/* Pre-rellenar URL del API desde localStorage si ya se configuró antes */
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = localStorage.getItem('INVESTAI_API_URL') || '';
+  const inp = document.getElementById('l-apiurl');
+  if (inp && saved) inp.value = saved;
+});
+</script>
+</body>
+</html>

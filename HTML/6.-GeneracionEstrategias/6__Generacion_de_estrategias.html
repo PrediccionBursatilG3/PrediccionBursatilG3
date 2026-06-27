@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestAI — Generación de Estrategias</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#0A0E1A;
+    --bg-elevated:#10172A;
+    --bg-elevated-2:#161F38;
+    --bg-input:#0D1426;
+    --border:rgba(255,255,255,.07);
+    --border-strong:rgba(255,255,255,.14);
+    --text-primary:#E9ECF5;
+    --text-secondary:#8993AC;
+    --text-tertiary:#525C75;
+    --accent:#4F7CFF;
+    --accent-soft:rgba(79,124,255,.14);
+    --gold:#C5961A;
+    --gold-soft:rgba(197,150,26,.14);
+    --positive:#22C55E;
+    --positive-soft:rgba(34,197,94,.13);
+    --negative:#EF4444;
+    --negative-soft:rgba(239,68,68,.13);
+    --radius-lg:16px;
+    --radius-md:12px;
+    --radius-sm:8px;
+    --font-sans:'Inter',-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(900px 480px at 85% -8%, rgba(79,124,255,.10), transparent 60%),
+      radial-gradient(700px 420px at -5% 10%, rgba(197,150,26,.06), transparent 55%),
+      var(--bg);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+    min-height:100vh;
+  }
+  .shell{display:flex;min-height:100vh;}
+
+  .sidebar{
+    width:236px;flex-shrink:0;background:var(--bg-elevated);
+    border-right:1px solid var(--border);
+    padding:20px 14px;display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,#5B8CFF,#7C5CFF);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+  .brand-name{font-size:14.5px;font-weight:600;letter-spacing:.1px;}
+  .brand-sub{font-size:10.5px;color:var(--text-tertiary);margin-top:1px;}
+  .nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);font-size:13px;color:var(--text-secondary);cursor:default;user-select:none;}
+  .nav-item i{font-size:17px;width:18px;text-align:center;}
+  .nav-item.active{background:var(--accent-soft);color:#C9D6FF;}
+  .nav-item.active i{color:var(--accent);}
+  .nav-item:not(.active){opacity:.62;}
+  .sidebar-foot{border-top:1px solid var(--border);padding-top:14px;display:flex;align-items:center;gap:9px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-elevated-2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold);flex-shrink:0;}
+  .foot-name{font-size:12.5px;font-weight:500;}
+  .foot-role{font-size:10.5px;color:var(--text-tertiary);}
+
+  .main{flex:1;min-width:0;padding:24px 28px 40px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .page-title{font-size:20px;font-weight:600;}
+  .page-sub{font-size:12.5px;color:var(--text-secondary);margin-top:3px;}
+  .badge{background:var(--accent-soft);color:#9AB4FF;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.6px;align-self:flex-start;}
+
+  .ratio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px;}
+  .ratio-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px 16px;display:flex;align-items:center;gap:13px;}
+  .ratio-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+  .ratio-label{font-size:10.5px;color:var(--text-tertiary);margin-bottom:3px;letter-spacing:.4px;text-transform:uppercase;font-weight:600;}
+  .ratio-value{font-family:var(--font-mono);font-size:21px;font-weight:600;line-height:1;}
+  .ratio-delta{font-size:11px;margin-top:3px;color:var(--text-secondary);}
+
+  .main-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+  .panel{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+  .panel-title{font-size:13px;font-weight:600;letter-spacing:.2px;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+  .panel-title i{font-size:16px;color:var(--gold);}
+  .form-group{margin-bottom:18px;}
+  .form-label{font-size:12px;color:var(--text-secondary);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;}
+  .form-label span{font-weight:600;color:var(--text-primary);}
+  .risk-track{position:relative;margin-top:4px;}
+  input[type=range]{width:100%;height:4px;appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,40%),var(--bg-elevated-2) var(--pct,40%),var(--bg-elevated-2) 100%);border-radius:4px;outline:none;cursor:pointer;border:none;}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--bg-elevated);border:3px solid var(--gold);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--bg-elevated);border:3px solid var(--gold);cursor:pointer;}
+  .risk-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--text-tertiary);}
+  select{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:9px;background:var(--bg-input);font-size:13px;color:var(--text-primary);outline:none;cursor:pointer;appearance:none;font-family:var(--font-sans);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238993AC' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  .capital-input{position:relative;}
+  .currency-prefix{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-tertiary);font-family:var(--font-mono);}
+  input[type=number]{width:100%;padding:10px 12px 10px 26px;border:1px solid var(--border-strong);border-radius:9px;background:var(--bg-input);font-size:13px;color:var(--text-primary);outline:none;font-family:var(--font-mono);}
+  input[type=number]:focus, select:focus{border-color:var(--accent);}
+  .gen-btn{width:100%;padding:12px;background:linear-gradient(135deg,#5B8CFF,#3D5FE0);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:filter .15s;font-family:var(--font-sans);}
+  .gen-btn:hover{filter:brightness(1.1);}
+  .gen-btn:disabled{opacity:.6;cursor:default;}
+  .gen-btn i{font-size:16px;}
+  .data-source{font-size:10.5px;color:var(--text-tertiary);margin-top:12px;display:flex;align-items:center;gap:6px;}
+  .data-source i{font-size:13px;}
+
+  .strategies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
+  .strat-card{background:var(--bg-elevated-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden;}
+  .strat-card:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+  .strat-card.active{border-color:var(--gold);}
+  .strat-accent{position:absolute;top:0;left:0;width:3px;height:100%;}
+  .strat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;padding-left:8px;}
+  .strat-name{font-size:13px;font-weight:600;}
+  .strat-type{font-size:10px;color:var(--text-tertiary);margin-top:2px;}
+  .risk-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .strat-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-left:8px;margin-bottom:13px;}
+  .metric-lbl{font-size:9.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px;}
+  .metric-val{font-size:13px;font-weight:600;font-family:var(--font-mono);margin-top:2px;}
+  .metric-val.green{color:var(--positive);}
+  .metric-val.red{color:var(--negative);}
+  .metric-val.amber{color:var(--gold);}
+  .payoff-wrap{padding-left:8px;}
+  .payoff-lbl{font-size:9.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px;}
+  .score-bar{margin-top:11px;padding-left:8px;}
+  .score-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .score-track{flex:1;height:4px;background:var(--bg-input);border-radius:4px;overflow:hidden;}
+  .score-fill{height:100%;border-radius:4px;}
+  .score-num{font-size:11px;color:var(--text-secondary);min-width:22px;text-align:right;font-family:var(--font-mono);}
+
+  .skeleton{position:relative;overflow:hidden;background:var(--bg-elevated-2);border-radius:8px;height:210px;}
+  .skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:shimmer 1.4s infinite;}
+  @keyframes shimmer{from{transform:translateX(-100%);}to{transform:translateX(100%);}}
+  .err-box{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px 4px;color:var(--text-secondary);font-size:13px;grid-column:1/-1;}
+  .err-box i{font-size:22px;color:var(--negative);}
+  .retry-btn{background:var(--bg-elevated-2);border:1px solid var(--border-strong);color:var(--text-primary);padding:7px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-family:var(--font-sans);}
+  .retry-btn:hover{border-color:var(--accent);}
+
+  @media (max-width:900px){
+    .sidebar{display:none;}
+    .main-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:640px){
+    .ratio-grid{grid-template-columns:1fr 1fr;}
+    .main{padding:16px;}
+  }
+
+/* =====================================================================
+   InvestAI · COMPONENTE DE NAVEGACIÓN LATERAL (compartido en las 11 GUI)
+===================================================================== */
+.ivnav-overlay{display:none;position:fixed;inset:0;background:rgba(5,7,14,.6);z-index:990;}
+.ivnav-overlay.activo{display:block;}
+.ivnav{
+  --iv-bg:#0c0f18; --iv-surface:#141a28; --iv-surface-3:#212a40;
+  --iv-border:rgba(255,255,255,.08); --iv-text:#eef1f8; --iv-text-dim:#a8b1c7; --iv-text-mute:#6c7690;
+  --iv-violet:#7c5cff; --iv-violet-soft:rgba(124,92,255,.16); --iv-teal:#1fe0c4;
+  width:228px;flex-shrink:0;background:var(--iv-bg);
+  border-right:1px solid var(--iv-border);height:100vh;
+  position:sticky;top:0;left:0;display:flex;flex-direction:column;
+  padding:18px 13px 14px;z-index:1000;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+.ivnav-brand{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;border-bottom:1px solid var(--iv-border);margin-bottom:12px;}
+.ivnav-glyph{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:800;font-size:15px;color:#0b0d14;flex-shrink:0;}
+.ivnav-name{font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:15px;color:var(--iv-text);letter-spacing:-.2px;line-height:1.15;}
+.ivnav-name b{font-weight:800;}
+.ivnav-tag{font-size:9.5px;color:var(--iv-text-mute);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
+.ivnav-close{display:none;}
+.ivnav-menu{flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.ivnav-menu::-webkit-scrollbar{width:4px;}
+.ivnav-menu::-webkit-scrollbar-thumb{background:var(--iv-surface-3);border-radius:4px;}
+.ivnav-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--iv-text-dim);font-size:12.5px;font-weight:500;text-decoration:none;position:relative;transition:background .15s,color .15s;}
+.ivnav-link svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
+.ivnav-link:hover{background:var(--iv-surface);color:var(--iv-text);}
+.ivnav-link.activo{background:linear-gradient(90deg,var(--iv-violet-soft),transparent);color:var(--iv-text);font-weight:600;}
+.ivnav-link.activo::before{content:"";position:absolute;left:-13px;top:5px;bottom:5px;width:3px;border-radius:0 4px 4px 0;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));}
+.ivnav-link.activo svg{opacity:1;color:var(--iv-teal);}
+.ivnav-footer{border-top:1px solid var(--iv-border);padding-top:11px;margin-top:8px;display:flex;align-items:center;gap:9px;}
+.ivnav-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3b4361,#1c2236);display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:11.5px;color:var(--iv-text-dim);flex-shrink:0;border:1px solid var(--iv-border);}
+.ivnav-user{flex:1;min-width:0;}
+.ivnav-uname{font-size:12px;font-weight:600;color:var(--iv-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ivnav-urole{font-size:10px;color:var(--iv-text-mute);}
+.ivnav-logout{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--iv-text-mute);transition:background .15s,color .15s;}
+.ivnav-logout svg{width:15px;height:15px;}
+.ivnav-logout:hover{background:rgba(244,63,94,.15);color:#f43f5e;}
+
+.ivnav-burger{display:none;background:none;border:none;color:inherit;cursor:pointer;padding:6px;margin-right:2px;flex-shrink:0;}
+.ivnav-burger svg{width:19px;height:19px;display:block;}
+
+body{display:flex;min-height:100vh;}
+.ivnav-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+@media (max-width:900px){
+  .ivnav{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s ease;box-shadow:30px 0 60px rgba(0,0,0,.5);}
+  .ivnav.abierto{transform:translateX(0);}
+  .ivnav-close{display:flex;margin-left:auto;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;color:var(--iv-text-mute);cursor:pointer;}
+  .ivnav-burger{display:flex;align-items:center;justify-content:center;}
+}
+
+
+.iv-api-config-btn{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#a8b1c7;font-size:.75rem;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.iv-api-config-btn:hover{background:rgba(255,255,255,.09);}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="ivnav-overlay" id="ivnavOverlay" onclick="ivNavToggle(false)"></div>
+<aside class="ivnav" id="ivnav">
+  <div class="ivnav-brand">
+    <div class="ivnav-glyph">AI</div>
+    <div style="flex:1">
+      <div class="ivnav-name"><b>Invest</b>AI</div>
+      <div class="ivnav-tag">iDeSo · FISI · UNMSM</div>
+    </div>
+    <div class="ivnav-close" onclick="ivNavToggle(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+  </div>
+  <nav class="ivnav-menu">
+    <a class="ivnav-link " href="../9.-DashboardCompleto/09_dashboard_completo_v2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="ivnav-link " href="../2.-Visualizacion/Html_2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9m6 8V5m6 12v-6m6 6V3"/></svg>
+      Visualización de Mercado
+    </a>
+    <a class="ivnav-link " href="../3.-PrediccionSVC/3_svc_clasificador_tendencia_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>
+      Predicción SVC
+    </a>
+    <a class="ivnav-link " href="../4.-PrediccionLSTM/4_lstm_regressor_prediccion_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-6 4 3 6-8"/><path d="M16 12l5-7" stroke-dasharray="2 2"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
+      Predicción LSTM
+    </a>
+    <a class="ivnav-link " href="../5.-AnalisisNLP/Html_5.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h9M8 13h9M8 17h5"/></svg>
+      Análisis NLP
+    </a>
+    <a class="ivnav-link activo" href="../6.-GeneracionEstrategias/6__Generacion_de_estrategias.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.2L5.5 16a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.2V3"/></svg>
+      Estrategias IA
+    </a>
+    <a class="ivnav-link " href="../7.-GestionPortafolio/7__Gestion_de_portafolio.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M21 12a9 9 0 0 1-9 9V12z"/></svg>
+      Portafolio
+    </a>
+    <a class="ivnav-link " href="../8.-EnvioSenalesBroker/8_señales_broker.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10a8 8 0 0 1 16 0v9M2 19h20"/></svg>
+      Señales &amp; Broker
+    </a>
+    <a class="ivnav-link " href="../10.-ConsolaModelosIA/10_consola_modelos_ia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M19 5l-2 2M5 19l2-2M19 19l-2-2"/></svg>
+      Consola Modelos IA
+    </a>
+    <a class="ivnav-link " href="../11.-ReportesBacktesting/11_reporte_backtesting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
+      Backtesting
+    </a>
+  </nav>
+  <div class="ivnav-footer">
+    <div class="ivnav-avatar">IA</div>
+    <div class="ivnav-user">
+      <div class="ivnav-uname">Inversionista</div>
+      <div class="ivnav-urole">Cuenta activa</div>
+    </div>
+    <a class="ivnav-logout" href="../1.-Autenticacion/01_autenticacion_v2.html" title="Cerrar sesión">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </a>
+  </div>
+</aside>
+
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="ivnav-burger" onclick="ivNavToggle(true)" aria-label="Abrir menú de navegación">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;"><div class="page-title">Generación de Estrategias con IA</div><button class="iv-api-config-btn" id="iv-api-btn" onclick="ivShowApiModal(generarEstrategias)" title="Configurar backend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="iv-api-status-dot" style="width:7px;height:7px;border-radius:50%;background:#6c7690;display:inline-block;margin-left:2px;"></span></button></div>
+          <div class="page-sub">Configura tu perfil y descubre estrategias de opciones sugeridas</div>
+        </div>
+      </div>
+      <span class="badge">INSTITUTIONAL</span>
+    </div>
+
+    <div class="ratio-grid" id="ratioGrid">
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+      <div class="ratio-card"><div class="skeleton" style="width:40px;height:40px;border-radius:11px;"></div><div style="flex:1;"><div class="skeleton" style="height:10px;width:60%;margin-bottom:8px;"></div><div class="skeleton" style="height:18px;width:40%;"></div></div></div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-user-circle"></i> Perfil del inversionista</div>
+
+        <div class="form-group">
+          <div class="form-label">Tolerancia al riesgo <span id="riskLabel">4 — Moderado</span></div>
+          <div class="risk-track">
+            <input type="range" id="riskSlider" min="1" max="10" value="4" step="1">
+            <div class="risk-labels"><span>Conservador</span><span>Agresivo</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Horizonte de inversión</div>
+          <select id="horizon">
+            <option value="short">Corto plazo — 3 a 6 meses</option>
+            <option value="medium" selected>Mediano plazo — 6 a 18 meses</option>
+            <option value="long">Largo plazo — 18 meses+</option>
+            <option value="tactical">Táctico — menos de 30 días</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Perspectiva de mercado</div>
+          <select id="outlook">
+            <option value="bullish">Alcista — esperando subida</option>
+            <option value="neutral" selected>Neutral — rango lateral</option>
+            <option value="bearish">Bajista — esperando caída</option>
+            <option value="volatile">Alta volatilidad esperada</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Capital disponible (USD)</div>
+          <div class="capital-input">
+            <span class="currency-prefix">$</span>
+            <input type="number" id="capital" value="50000" min="1000" step="1000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">Activo subyacente</div>
+          <select id="asset"></select>
+        </div>
+
+        <button class="gen-btn" id="genBtn" onclick="generateStrategies()">
+          <i class="ti ti-wand"></i> <span id="genBtnLabel">Generar estrategias</span>
+        </button>
+        <div class="data-source"><i class="ti ti-database"></i><span id="dataSourceLabel">Cargando datos…</span></div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-title"><i class="ti ti-bulb"></i> Estrategias sugeridas</div>
+          <div class="strategies-grid" id="strategiesGrid">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let strategyData = null;
+const payoffCharts = {};
+
+const slider = document.getElementById('riskSlider');
+const riskNames = {1:'Conservador',2:'Conservador+',3:'Moderado-',4:'Moderado',5:'Moderado+',6:'Balanceado',7:'Activo',8:'Agresivo-',9:'Agresivo',10:'Especulativo'};
+const riskColors = {1:'#22C55E',2:'#22C55E',3:'#22C55E',4:'#4F7CFF',5:'#4F7CFF',6:'#C5961A',7:'#C5961A',8:'#F59E0B',9:'#EF4444',10:'#EF4444'};
+
+slider.addEventListener('input', () => {
+  const v = slider.value;
+  const pct = ((v-1)/9*100).toFixed(1);
+  slider.style.setProperty('--pct', pct + '%');
+  document.getElementById('riskLabel').textContent = v + ' — ' + riskNames[v];
+  document.getElementById('riskLabel').style.color = riskColors[v];
+  if(strategyData) renderRatios(parseInt(v));
+});
+slider.style.setProperty('--pct', '33.3%');
+
+async function loadStrategyData(){
+  try{
+    const base = ivApiBase();
+    if (!base) { ivShowApiModal(generarEstrategias); return; }
+    // Usa SVC para señal de tendencia + LSTM para precio objetivo
+    const ticker = document.getElementById('sel-ticker')?.value || 'BVN';
+    const res = await fetch(`${base}/api/svc/${encodeURIComponent(ticker)}`,
+      {signal: AbortSignal.timeout(45000), headers:{'Accept':'application/json'}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    strategyData = data;
+    document.getElementById('asset').innerHTML = data.assets.map((a,i)=>
+      `<option value="${a.symbol}" ${a.symbol==='QQQ'?'selected':''}>${a.symbol} — ${a.name}</option>`).join('');
+    document.getElementById('dataSourceLabel').textContent = 'Datos cargados de data/strategies.json · ' + new Date(data.generatedAt).toLocaleString('es-PE',{dateStyle:'medium',timeStyle:'short'});
+    renderRatios(parseInt(slider.value));
+    generateStrategies();
+  }catch(err){
+    document.getElementById('strategiesGrid').innerHTML = `
+      <div class="err-box">
+        <i class="ti ti-alert-triangle"></i>
+        <div>No se pudieron cargar las estrategias (${err.message}). Verifica que <code>data/strategies.json</code> exista junto a este archivo.</div>
+        <button class="retry-btn" onclick="loadStrategyData()"><i class="ti ti-refresh"></i> Reintentar</button>
+      </div>`;
+    document.getElementById('dataSourceLabel').textContent = 'Error al cargar datos';
+  }
+}
+
+function renderRatios(riskLevel){
+  const profile = strategyData.riskProfiles.find(r => r.level === riskLevel) || strategyData.riskProfiles[3];
+  const ratios = [
+    {label:'Sharpe Ratio', value:profile.sharpe.toFixed(2), delta:'vs. benchmark', icon:'ti-chart-line', bg:'rgba(79,124,255,.14)', ic:'#4F7CFF'},
+    {label:'Sortino Ratio', value:profile.sortino.toFixed(2), delta:'Ajustado a baja', icon:'ti-trending-up', bg:'rgba(197,150,26,.14)', ic:'#C5961A'},
+    {label:'Calmar Ratio', value:profile.calmar.toFixed(2), delta:'Ajustado a drawdown', icon:'ti-shield-check', bg:'rgba(34,197,94,.13)', ic:'#22C55E'},
+    {label:'Volatilidad', value:profile.volatility.toFixed(1)+'%', delta:'Anualizada', icon:'ti-activity', bg:'rgba(239,68,68,.13)', ic:'#EF4444'}
+  ];
+  document.getElementById('ratioGrid').innerHTML = ratios.map(r=>`
+    <div class="ratio-card">
+      <div class="ratio-icon" style="background:${r.bg}"><i class="ti ${r.icon}" style="color:${r.ic};font-size:20px;"></i></div>
+      <div>
+        <div class="ratio-label">${r.label}</div>
+        <div class="ratio-value">${r.value}</div>
+        <div class="ratio-delta">${r.delta} · perfil ${profile.label}</div>
+      </div>
+    </div>`).join('');
+}
+
+function fmtMoney(n){
+  if(n === null || n === undefined) return n === null ? 'Ilimitado' : 'N/A';
+  return (n>=0?'+':'-') + '$' + Math.abs(n).toLocaleString('en-US');
+}
+
+function drawPayoff(canvasId, strat){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  if(payoffCharts[canvasId]) payoffCharts[canvasId].destroy();
+  payoffCharts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type:'line',
+    data:{
+      labels: strat.payoff.map(p=>p.x),
+      datasets:[{
+        data: strat.payoff.map(p=>p.y),
+        borderColor: strat.accentColor,
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: { target:{value:0}, above:'rgba(34,197,94,.10)', below:'rgba(239,68,68,.10)' },
+        tension: 0.3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{enabled:false}},
+      scales:{x:{display:false}, y:{display:false}},
+      animation:{duration:350}
+    }
+  });
+}
+
+async function generateStrategies(){
+  if(!strategyData) return;
+  const btn = document.getElementById('genBtn');
+  const label = document.getElementById('genBtnLabel');
+  btn.disabled = true;
+  label.textContent = 'Generando…';
+
+  await new Promise(r=>setTimeout(r, 260)); // breve espera para reflejar el cálculo del motor de IA
+
+  const risk = parseInt(slider.value);
+  const outlook = document.getElementById('outlook').value;
+  const asset = document.getElementById('asset').value;
+
+  let filtered = strategyData.strategies.filter(s => s.outlooks.includes(outlook));
+  if(filtered.length < 3) filtered = strategyData.strategies.slice();
+
+  if(risk <= 3) filtered = filtered.filter(s=>s.riskLevel !== 'High').slice(0,3);
+  else if(risk <= 6) filtered = filtered.slice(0,4);
+  else filtered = strategyData.strategies.slice(0,6);
+
+  document.getElementById('strategiesGrid').innerHTML = filtered.map(s=>`
+    <div class="strat-card" id="card_${s.id}" onclick="selectCard('${s.id}')">
+      <div class="strat-accent" style="background:${s.accentColor}"></div>
+      <div class="strat-header">
+        <div>
+          <div class="strat-name">${s.name}</div>
+          <div class="strat-type">${s.type}</div>
+        </div>
+        <span class="risk-badge" style="background:${s.accentColor}26;color:${s.accentColor}">${s.riskLevel} risk</span>
+      </div>
+      <div class="strat-metrics">
+        <div><div class="metric-lbl">Riesgo máx.</div><div class="metric-val red">${fmtMoney(s.maxRisk)}</div></div>
+        <div><div class="metric-lbl">Ganancia máx.</div><div class="metric-val green">${fmtMoney(s.maxProfit)}</div></div>
+        <div><div class="metric-lbl">Punto eq.</div><div class="metric-val">${s.breakeven}</div></div>
+        <div><div class="metric-lbl">Prob. éxito</div><div class="metric-val amber">${s.winProbability!=null ? (s.winProbability*100).toFixed(0)+'%' : 'N/A'}</div></div>
+      </div>
+      <div class="payoff-wrap">
+        <div class="payoff-lbl">Payoff al vencimiento — ${asset}</div>
+        <div style="position:relative;height:70px;"><canvas id="payoff_${s.id}" role="img" aria-label="${s.name} diagrama de payoff"></canvas></div>
+      </div>
+      <div class="score-bar">
+        <div class="score-row">
+          <span style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px">AI fit score</span>
+          <div class="score-track"><div class="score-fill" style="width:${s.score}%;background:${s.accentColor}"></div></div>
+          <span class="score-num">${s.score}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  setTimeout(()=>{ filtered.forEach(s=>drawPayoff('payoff_'+s.id, s)); }, 30);
+
+  btn.disabled = false;
+  label.textContent = 'Generar estrategias';
+}
+
+function selectCard(id){
+  document.querySelectorAll('.strat-card').forEach(c=>c.classList.remove('active'));
+  const el = document.getElementById('card_'+id);
+  if(el) el.classList.add('active');
+}
+
+loadStrategyData();
+</script>
+
+<script>
+/* =====================================================================
+   InvestAI · API CLIENT (compartido por los 11 módulos)
+   La URL base se guarda en localStorage('INVESTAI_API_URL')
+===================================================================== */
+const _IV_KEY = 'INVESTAI_API_URL';
+
+function ivApiBase() {
+  return (localStorage.getItem(_IV_KEY) || '').replace(/\/+$/, '');
+}
+function ivApiSave(url) {
+  localStorage.setItem(_IV_KEY, (url || '').trim().replace(/\/+$/, ''));
+}
+
+async function ivApiFetch(path, opts = {}) {
+  const base = ivApiBase();
+  if (!base) throw new Error('API_NOT_CONFIGURED');
+  const url = base + path;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json', ...opts.headers },
+    signal: AbortSignal.timeout(opts.timeout || 30000),
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/* Banner flotante que aparece cuando el backend no está configurado
+   o falla. Inyectado automáticamente en el <body>. */
+function ivShowApiModal(onSave) {
+  if (document.getElementById('iv-api-modal')) return;
+  const saved = ivApiBase();
+  const modal = document.createElement('div');
+  modal.id = 'iv-api-modal';
+  modal.innerHTML = `
+    <div class="iv-modal-bg" onclick="ivCloseApiModal()"></div>
+    <div class="iv-modal-box">
+      <div class="iv-modal-icon">🔗</div>
+      <div class="iv-modal-title">Conectar con el Backend InvestAI</div>
+      <p class="iv-modal-desc">
+        El backend FastAPI se ejecuta en Google Colab a través de ngrok.<br>
+        Pega la URL pública que muestra el Colab al iniciarse:
+      </p>
+      <input id="iv-api-input" class="iv-modal-input" type="url"
+        placeholder="https://xxxx-xxxx.ngrok-free.app"
+        value="${saved}" autocomplete="off" spellcheck="false">
+      <p class="iv-modal-hint" id="iv-modal-hint" style="display:none"></p>
+      <div class="iv-modal-actions">
+        <button class="iv-btn-secondary" onclick="ivCloseApiModal()">Cancelar</button>
+        <button class="iv-btn-primary" onclick="ivSaveApiModal()">Guardar y Reconectar</button>
+      </div>
+      <p class="iv-modal-footer">
+        Ruta de logs:&nbsp;<code>/api/salud</code> &nbsp;·&nbsp;
+        <a href="https://dashboard.ngrok.com" target="_blank" rel="noopener">Panel ngrok</a>
+      </p>
+    </div>`;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #iv-api-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:'Inter',system-ui,sans-serif; }
+    .iv-modal-bg { position:absolute; inset:0; background:rgba(5,7,14,.75); backdrop-filter:blur(4px); }
+    .iv-modal-box { position:relative; background:#141a28; border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:32px 28px 24px; width:min(480px,92vw); box-shadow:0 24px 80px rgba(0,0,0,.7); }
+    .iv-modal-icon { font-size:2rem; margin-bottom:10px; }
+    .iv-modal-title { font-family:'Sora',system-ui,sans-serif; font-size:1.15rem; font-weight:700; color:#eef1f8; margin-bottom:8px; }
+    .iv-modal-desc { font-size:.85rem; color:#a8b1c7; line-height:1.55; margin:0 0 16px; }
+    .iv-modal-hint { font-size:.78rem; margin:6px 0 0; }
+    .iv-modal-hint.ok { color:#1fe0c4; }
+    .iv-modal-hint.err { color:#f87171; }
+    .iv-modal-input { width:100%; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#0c0f18; color:#eef1f8; font-family:'IBM Plex Mono',monospace; font-size:.82rem; outline:none; box-sizing:border-box; }
+    .iv-modal-input:focus { border-color:#7c5cff; box-shadow:0 0 0 3px rgba(124,92,255,.2); }
+    .iv-modal-actions { display:flex; gap:10px; margin-top:16px; }
+    .iv-btn-primary { flex:1; padding:10px; border-radius:10px; border:none; background:linear-gradient(135deg,#1fe0c4,#7c5cff); color:#0b0d14; font-weight:700; font-size:.88rem; cursor:pointer; transition:opacity .15s; }
+    .iv-btn-primary:hover { opacity:.85; }
+    .iv-btn-secondary { padding:10px 16px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:transparent; color:#a8b1c7; font-size:.88rem; cursor:pointer; }
+    .iv-modal-footer { font-size:.72rem; color:#6c7690; margin:14px 0 0; text-align:center; }
+    .iv-modal-footer a { color:#7c5cff; }
+    .iv-toast { position:fixed; bottom:24px; right:24px; background:#141a28; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px 18px; font-size:.82rem; color:#eef1f8; z-index:10000; display:flex; align-items:center; gap:10px; box-shadow:0 8px 32px rgba(0,0,0,.5); transition:opacity .4s; }
+    .iv-toast.ok { border-color:rgba(31,224,196,.3); }
+    .iv-toast.err { border-color:rgba(248,113,113,.3); }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+  document.getElementById('iv-api-input').focus();
+  window._ivApiOnSave = onSave;
+}
+
+function ivCloseApiModal() {
+  const m = document.getElementById('iv-api-modal');
+  if (m) m.remove();
+}
+
+async function ivSaveApiModal() {
+  const inp = document.getElementById('iv-api-input');
+  const hint = document.getElementById('iv-modal-hint');
+  const url = (inp.value || '').trim().replace(/\/+$/, '');
+  if (!url) { hint.textContent = 'Por favor ingresa la URL.'; hint.className = 'iv-modal-hint err'; hint.style.display='block'; return; }
+  inp.disabled = true;
+  hint.textContent = 'Verificando conexión con /api/salud…';
+  hint.className = 'iv-modal-hint'; hint.style.display='block';
+  try {
+    const res = await fetch(url + '/api/salud', { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    ivApiSave(url);
+    hint.textContent = `✓ Conectado · ${data.servicio || 'InvestAI API'} v${data.version || ''}`;
+    hint.className = 'iv-modal-hint ok';
+    setTimeout(() => {
+      ivCloseApiModal();
+      ivToast('✓ Backend conectado correctamente', 'ok');
+      if (typeof window._ivApiOnSave === 'function') window._ivApiOnSave(url);
+    }, 800);
+  } catch (e) {
+    hint.textContent = `✗ No se pudo conectar: ${e.message}. Verifica la URL y que el Colab esté ejecutándose.`;
+    hint.className = 'iv-modal-hint err';
+    inp.disabled = false;
+  }
+}
+
+function ivToast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = `iv-toast ${type}`;
+  t.innerHTML = `<span>${type==='ok'?'✅':'⚠️'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+async function ivCheckHealth(onSuccess, onFail) {
+  const base = ivApiBase();
+  if (!base) { if (onFail) onFail('API_NOT_CONFIGURED'); return; }
+  try {
+    const data = await ivApiFetch('/api/salud', { timeout: 6000 });
+    if (onSuccess) onSuccess(data);
+  } catch (e) {
+    if (onFail) onFail(e.message || 'UNKNOWN');
+  }
+}
+
+
+
+function ivActualizarDot(ok){const d=document.getElementById('iv-api-status-dot');if(d)d.style.background=ok?'#1fe0c4':'#f87171';}
+function ivNavToggle(abrir){
+  document.getElementById('ivnav').classList.toggle('abierto', abrir);
+  document.getElementById('ivnavOverlay').classList.toggle('activo', abrir);
+}
+</script>
+
+<script>setTimeout(()=>{ivCheckHealth(()=>ivActualizarDot(true),(e)=>{ivActualizarDot(false);if(e==="API_NOT_CONFIGURED")ivToast("Backend no configurado — pulsa 🔗 para conectar","err");});},500);</script>
+</body>
+</html>

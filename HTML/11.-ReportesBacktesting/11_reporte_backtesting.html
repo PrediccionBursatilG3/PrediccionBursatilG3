@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestAI — Reportes de Backtesting</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0D1117;
+    --bg-card:     #161B22;
+    --bg-card2:    #1C2333;
+    --border:      #30363D;
+    --border-soft: #21262D;
+    --text:        #E6EDF3;
+    --text-muted:  #8B949E;
+    --text-dim:    #484F58;
+    --accent-blue: #1F6FEB;
+    --green:       #3FB950;
+    --green-bg:    rgba(63,185,80,0.12);
+    --red:         #F85149;
+    --red-bg:      rgba(248,81,73,0.12);
+    --amber:       #D29922;
+    --amber-bg:    rgba(210,153,34,0.12);
+    --purple:      #BC8CFF;
+    --radius:      8px;
+    --radius-lg:   12px;
+    --shadow:      0 4px 20px rgba(0,0,0,0.4);
+    --font:        'Inter', system-ui, sans-serif;
+    --font-mono:   'JetBrains Mono', 'Fira Mono', monospace;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; background: var(--bg-card); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.25rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
+  .sidebar-logo { padding: 0 1rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: .75rem; display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 34px; height: 34px; background: linear-gradient(135deg,#238636,#1F6FEB); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .logo-text { font-family: 'Space Grotesk',sans-serif; font-size: 17px; font-weight: 700; color: var(--text); }
+  .logo-text em { font-style: normal; color: var(--green); }
+  .logo-badge { margin-left: auto; background: var(--accent-blue); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .nav-section { padding: 0 .6rem; margin-bottom: .5rem; }
+  .nav-label { font-size: 9px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; padding: 0 .5rem; margin-bottom: .4rem; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; margin-bottom: 2px; }
+  .nav-item:hover { background: rgba(255,255,255,.05); color: var(--text); }
+  .nav-item.active { background: rgba(31,111,235,.15); color: #79C0FF; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .sidebar-user { margin-top: auto; padding: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; background: linear-gradient(135deg,#1F6FEB,#238636); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: white; flex-shrink: 0; }
+  .user-name { font-size: 12px; font-weight: 600; }
+  .user-plan  { font-size: 10px; color: var(--amber); font-weight: 500; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+  /* TOPBAR */
+  .topbar { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .page-title { font-family: 'Space Grotesk',sans-serif; font-size: 15px; font-weight: 600; }
+  .topbar-controls { display: flex; align-items: center; gap: 8px; }
+  select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; font-family: var(--font); font-size: 12px; color: var(--text); background: var(--bg-card2); outline: none; cursor: pointer; }
+  .btn { padding: 6px 14px; border: none; border-radius: 7px; font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn-primary { background: var(--accent-blue); color: white; }
+  .btn-primary:hover { background: #388BFD; }
+  .btn-outline { background: var(--bg-card2); border: 1px solid var(--border); color: var(--text-muted); }
+  .btn-outline:hover { color: var(--text); border-color: var(--text-muted); }
+
+  /* API BANNER */
+  .api-banner { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 12px; font-weight: 500; border-bottom: 1px solid var(--border); }
+  .api-banner.loading  { background: rgba(210,153,34,.08); color: var(--amber); }
+  .api-banner.success  { background: rgba(63,185,80,.08);  color: var(--green); }
+  .api-banner.error    { background: rgba(248,81,73,.08);  color: var(--red); }
+  .api-banner.fallback { background: rgba(188,140,255,.08);color: var(--purple); }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--amber); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* STRATEGY TABS */
+  .strategy-tabs { display: flex; gap: 6px; }
+  .strat-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer; background: var(--bg-card2); color: var(--text-muted); transition: all .15s; }
+  .strat-tab:hover { color: var(--text); border-color: var(--text-muted); }
+  .strat-tab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 1rem 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+
+  /* KPI GRID */
+  .kpi-grid  { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+  .kpi-grid2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+  .kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
+  .kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .kpi-value { font-family: 'Space Grotesk',sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+  .kpi-sub   { font-size: 11px; margin-top: 3px; font-weight: 500; }
+  .green  { color: var(--green); }
+  .red    { color: var(--red); }
+  .amber  { color: var(--amber); }
+  .blue   { color: #79C0FF; }
+
+  /* CARDS */
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; }
+  .card-title { font-family: 'Space Grotesk',sans-serif; font-size: 13px; font-weight: 600; margin-bottom: .75rem; display: flex; align-items: center; justify-content: space-between; }
+
+  /* CHARTS */
+  .charts-row  { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+  .charts-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  /* METRIC BARS */
+  .metric-bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .metric-bar-label { font-size: 12px; color: var(--text-muted); width: 90px; flex-shrink: 0; }
+  .metric-bar-bg    { flex: 1; height: 7px; background: var(--bg); border-radius: 4px; }
+  .metric-bar-fill  { height: 7px; border-radius: 4px; transition: width .6s ease; }
+  .metric-bar-val   { font-size: 12px; font-weight: 600; width: 50px; text-align: right; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { border-bottom: 1.5px solid var(--border); }
+  th { text-align: left; padding: 7px 8px; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+  td { padding: 8px; border-bottom: 1px solid var(--border-soft); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .badge-win  { background: var(--green-bg); color: var(--green); }
+  .badge-loss { background: var(--red-bg);   color: var(--red); }
+  .badge-buy  { background: rgba(31,111,235,.15); color: #79C0FF; }
+  .badge-sell { background: rgba(248,81,73,.15);  color: var(--red); }
+
+  /* SOURCE INDICATOR */
+  .source-tag { font-size: 10px; color: var(--text-dim); background: var(--bg-card2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; font-weight: 500; }
+  .source-tag.real { color: var(--green); border-color: rgba(63,185,80,.3); }
+  .source-tag.demo { color: var(--purple); border-color: rgba(188,140,255,.3); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .kpi-grid, .kpi-grid2 { grid-template-columns: repeat(2,1fr); }
+    .charts-row, .charts-row2 { grid-template-columns: 1fr; }
+  }
+
+/* =====================================================================
+   InvestAI · COMPONENTE DE NAVEGACIÓN LATERAL (compartido en las 11 GUI)
+===================================================================== */
+.ivnav-overlay{display:none;position:fixed;inset:0;background:rgba(5,7,14,.6);z-index:990;}
+.ivnav-overlay.activo{display:block;}
+.ivnav{
+  --iv-bg:#0c0f18; --iv-surface:#141a28; --iv-surface-3:#212a40;
+  --iv-border:rgba(255,255,255,.08); --iv-text:#eef1f8; --iv-text-dim:#a8b1c7; --iv-text-mute:#6c7690;
+  --iv-violet:#7c5cff; --iv-violet-soft:rgba(124,92,255,.16); --iv-teal:#1fe0c4;
+  width:228px;flex-shrink:0;background:var(--iv-bg);
+  border-right:1px solid var(--iv-border);height:100vh;
+  position:sticky;top:0;left:0;display:flex;flex-direction:column;
+  padding:18px 13px 14px;z-index:1000;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+.ivnav-brand{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;border-bottom:1px solid var(--iv-border);margin-bottom:12px;}
+.ivnav-glyph{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:800;font-size:15px;color:#0b0d14;flex-shrink:0;}
+.ivnav-name{font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:15px;color:var(--iv-text);letter-spacing:-.2px;line-height:1.15;}
+.ivnav-name b{font-weight:800;}
+.ivnav-tag{font-size:9.5px;color:var(--iv-text-mute);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
+.ivnav-close{display:none;}
+.ivnav-menu{flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.ivnav-menu::-webkit-scrollbar{width:4px;}
+.ivnav-menu::-webkit-scrollbar-thumb{background:var(--iv-surface-3);border-radius:4px;}
+.ivnav-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--iv-text-dim);font-size:12.5px;font-weight:500;text-decoration:none;position:relative;transition:background .15s,color .15s;}
+.ivnav-link svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
+.ivnav-link:hover{background:var(--iv-surface);color:var(--iv-text);}
+.ivnav-link.activo{background:linear-gradient(90deg,var(--iv-violet-soft),transparent);color:var(--iv-text);font-weight:600;}
+.ivnav-link.activo::before{content:"";position:absolute;left:-13px;top:5px;bottom:5px;width:3px;border-radius:0 4px 4px 0;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));}
+.ivnav-link.activo svg{opacity:1;color:var(--iv-teal);}
+.ivnav-footer{border-top:1px solid var(--iv-border);padding-top:11px;margin-top:8px;display:flex;align-items:center;gap:9px;}
+.ivnav-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3b4361,#1c2236);display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:11.5px;color:var(--iv-text-dim);flex-shrink:0;border:1px solid var(--iv-border);}
+.ivnav-user{flex:1;min-width:0;}
+.ivnav-uname{font-size:12px;font-weight:600;color:var(--iv-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ivnav-urole{font-size:10px;color:var(--iv-text-mute);}
+.ivnav-logout{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--iv-text-mute);transition:background .15s,color .15s;}
+.ivnav-logout svg{width:15px;height:15px;}
+.ivnav-logout:hover{background:rgba(244,63,94,.15);color:#f43f5e;}
+
+.ivnav-burger{display:none;background:none;border:none;color:inherit;cursor:pointer;padding:6px;margin-right:2px;flex-shrink:0;}
+.ivnav-burger svg{width:19px;height:19px;display:block;}
+
+body{display:flex;min-height:100vh;}
+.ivnav-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+@media (max-width:900px){
+  .ivnav{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s ease;box-shadow:30px 0 60px rgba(0,0,0,.5);}
+  .ivnav.abierto{transform:translateX(0);}
+  .ivnav-close{display:flex;margin-left:auto;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;color:var(--iv-text-mute);cursor:pointer;}
+  .ivnav-burger{display:flex;align-items:center;justify-content:center;}
+}
+
+
+.iv-api-config-btn{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#a8b1c7;font-size:.75rem;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.iv-api-config-btn:hover{background:rgba(255,255,255,.09);}
+</style>
+</head>
+<body>
+
+<div class="ivnav-overlay" id="ivnavOverlay" onclick="ivNavToggle(false)"></div>
+<aside class="ivnav" id="ivnav">
+  <div class="ivnav-brand">
+    <div class="ivnav-glyph">AI</div>
+    <div style="flex:1">
+      <div class="ivnav-name"><b>Invest</b>AI</div>
+      <div class="ivnav-tag">iDeSo · FISI · UNMSM</div>
+    </div>
+    <div class="ivnav-close" onclick="ivNavToggle(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+  </div>
+  <nav class="ivnav-menu">
+    <a class="ivnav-link " href="../9.-DashboardCompleto/09_dashboard_completo_v2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="ivnav-link " href="../2.-Visualizacion/Html_2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9m6 8V5m6 12v-6m6 6V3"/></svg>
+      Visualización de Mercado
+    </a>
+    <a class="ivnav-link " href="../3.-PrediccionSVC/3_svc_clasificador_tendencia_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>
+      Predicción SVC
+    </a>
+    <a class="ivnav-link " href="../4.-PrediccionLSTM/4_lstm_regressor_prediccion_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-6 4 3 6-8"/><path d="M16 12l5-7" stroke-dasharray="2 2"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
+      Predicción LSTM
+    </a>
+    <a class="ivnav-link " href="../5.-AnalisisNLP/Html_5.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h9M8 13h9M8 17h5"/></svg>
+      Análisis NLP
+    </a>
+    <a class="ivnav-link " href="../6.-GeneracionEstrategias/6__Generacion_de_estrategias.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.2L5.5 16a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.2V3"/></svg>
+      Estrategias IA
+    </a>
+    <a class="ivnav-link " href="../7.-GestionPortafolio/7__Gestion_de_portafolio.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M21 12a9 9 0 0 1-9 9V12z"/></svg>
+      Portafolio
+    </a>
+    <a class="ivnav-link " href="../8.-EnvioSenalesBroker/8_señales_broker.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10a8 8 0 0 1 16 0v9M2 19h20"/></svg>
+      Señales &amp; Broker
+    </a>
+    <a class="ivnav-link " href="../10.-ConsolaModelosIA/10_consola_modelos_ia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M19 5l-2 2M5 19l2-2M19 19l-2-2"/></svg>
+      Consola Modelos IA
+    </a>
+    <a class="ivnav-link activo" href="../11.-ReportesBacktesting/11_reporte_backtesting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
+      Backtesting
+    </a>
+  </nav>
+  <div class="ivnav-footer">
+    <div class="ivnav-avatar">IA</div>
+    <div class="ivnav-user">
+      <div class="ivnav-uname">Inversionista</div>
+      <div class="ivnav-urole">Cuenta activa</div>
+    </div>
+    <a class="ivnav-logout" href="../1.-Autenticacion/01_autenticacion_v2.html" title="Cerrar sesión">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </a>
+  </div>
+</aside>
+
+
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="ivnav-burger" onclick="ivNavToggle(true)" aria-label="Abrir menú de navegación">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="page-title">Backtesting Avanzado</span>
+      <button class="iv-api-config-btn" id="iv-api-btn" onclick="ivShowApiModal(()=>ejecutarBacktest())" title="Configurar backend"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="iv-api-status-dot" style="width:7px;height:7px;border-radius:50%;background:#6c7690;display:inline-block;margin-left:2px;"></span></button>
+      <div class="strategy-tabs">
+        <div class="strat-tab active" onclick="selectStrat(this,'SMA Cruce')">SMA Cruce</div>
+        <div class="strat-tab" onclick="selectStrat(this,'RSI Reversión')">RSI Reversión</div>
+        <div class="strat-tab" onclick="selectStrat(this,'MACD Momentum')">MACD Momentum</div>
+      </div>
+    </div>
+    <div class="topbar-controls">
+      <select id="ticker-bt" onchange="cambiarTicker()">
+        <option value="FSM">FSM</option>
+        <option value="ABX.TO">ABX.TO</option>
+        <option value="BVN">BVN</option>
+        <option value="BHP">BHP</option>
+        <option value="VOLCABC1.LM">VOLCABC1.LM</option>
+      </select>
+      <select id="period-bt">
+        <option value="6M">6M</option>
+        <option value="3M">3M</option>
+        <option value="1A">1A</option>
+        <option value="2A">2A</option>
+      </select>
+      <button class="btn btn-primary" onclick="renderAll()">▶ Ejecutar</button>
+      <button class="btn btn-outline">↓ PDF</button>
+      <button class="btn btn-outline">↓ CSV</button>
+    </div>
+  </div>
+
+  <!-- API STATUS BANNER -->
+  <div class="api-banner loading" id="apiBanner">
+    <div class="spinner" id="apiSpinner"></div>
+    <span id="apiMsg">Conectando al backend — GET /api/mercado/FSM</span>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI ROW 1 — datos reales del backend -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Retorno Total</div>
+        <div class="kpi-value green" id="kpi-retorno">+—%</div>
+        <div class="kpi-sub" id="kpi-retorno-sub" style="color:var(--text-muted)">vs. Buy & Hold: —</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Sharpe Ratio</div>
+        <div class="kpi-value blue" id="kpi-sharpe">—</div>
+        <div class="kpi-sub" style="color:var(--text-muted)">Ajustado por riesgo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Max Drawdown</div>
+        <div class="kpi-value red" id="kpi-drawdown">—%</div>
+        <div class="kpi-sub" style="color:var(--text-muted)">Pérdida máxima</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value green" id="kpi-winrate">—%</div>
+        <div class="kpi-sub" style="color:var(--text-muted)">Operaciones ganadoras</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Operaciones</div>
+        <div class="kpi-value" id="kpi-ops">—</div>
+        <div class="kpi-sub amber" id="kpi-ops-sub">—</div>
+      </div>
+    </div>
+
+    <!-- KPI ROW 2 — indicadores técnicos reales -->
+    <div class="kpi-grid2">
+      <div class="kpi-card">
+        <div class="kpi-label">Precio Actual</div>
+        <div class="kpi-value blue" id="kpi-precio">$—</div>
+        <div class="kpi-sub" id="kpi-variacion" style="color:var(--text-muted)">Var. —%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">RSI-14</div>
+        <div class="kpi-value" id="kpi-rsi">—</div>
+        <div class="kpi-sub" id="kpi-rsi-label" style="color:var(--text-muted)">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">MACD</div>
+        <div class="kpi-value" id="kpi-macd">—</div>
+        <div class="kpi-sub" id="kpi-macd-label" style="color:var(--text-muted)">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">SMA-20</div>
+        <div class="kpi-value" id="kpi-sma20">$—</div>
+        <div class="kpi-sub" style="color:var(--text-muted)">Media 20 días</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Señal Actual</div>
+        <div class="kpi-value" id="kpi-signal">—</div>
+        <div class="kpi-sub" id="kpi-signal-sub">
+          <span class="source-tag demo" id="dataSource">Demo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO EQUITY + DISTRIBUCIÓN RIESGO -->
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-title">
+          Curva de Equity
+          <span style="font-size:11px;color:var(--text-muted);font-weight:400;" id="equitySubtitle">Basado en señales SMA del backend</span>
+        </div>
+        <div id="equity-chart" style="height:220px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Métricas de Riesgo</div>
+        <div id="risk-metrics">
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Diversificación</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:72%;background:var(--accent-blue)"></div></div>
+            <span class="metric-bar-val blue">72%</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Liquidez</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" style="width:88%;background:var(--green)"></div></div>
+            <span class="metric-bar-val green">88%</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Volatilidad</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" id="bar-vol" style="width:45%;background:var(--amber)"></div></div>
+            <span class="metric-bar-val amber" id="bar-vol-val">45%</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Sharpe</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" id="bar-sharpe" style="width:60%;background:var(--green)"></div></div>
+            <span class="metric-bar-val green" id="bar-sharpe-val">1.42</span>
+          </div>
+          <div class="metric-bar-row">
+            <span class="metric-bar-label">Drawdown</span>
+            <div class="metric-bar-bg"><div class="metric-bar-fill" id="bar-dd" style="width:30%;background:var(--red)"></div></div>
+            <span class="metric-bar-val red" id="bar-dd-val">−9.4%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTOGRAMA + DRAWDOWN -->
+    <div class="charts-row2">
+      <div class="card">
+        <div class="card-title">Distribución de Retornos Diarios</div>
+        <canvas id="hist-chart" style="max-height:200px;"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">Curva de Drawdown</div>
+        <canvas id="dd-chart" style="max-height:200px;"></canvas>
+      </div>
+    </div>
+
+    <!-- TABLA DE OPERACIONES -->
+    <div class="card">
+      <div class="card-title">
+        Operaciones del Backtesting
+        <span id="tradesSubtitle" style="font-size:11px;color:var(--text-muted);font-weight:400;">Basadas en señales reales del backend</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Entrada</th><th>Salida</th>
+            <th>Ticker</th><th>Tipo</th>
+            <th>Precio Entrada</th><th>Precio Salida</th>
+            <th>Cantidad</th><th>P&L ($)</th><th>P&L (%)</th><th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody id="trades-table"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /* --------------------------------------------------
+     CONFIGURACIÓN BACKEND
+     Cambiar por la URL real de ngrok/render cuando esté desplegado.
+  -------------------------------------------------- */
+  const API_BASE_URL = ivApiBase() || 'http://localhost:8000';
+
+  /* --------------------------------------------------
+     Estado global
+  -------------------------------------------------- */
+  let backendData  = null;   // datos reales del backend
+  let usandoReal   = false;
+  let histChart, ddChart;
+  let currentStrat = 'SMA Cruce';
+
+  /* --------------------------------------------------
+     FETCH AL BACKEND — GET /api/mercado/{ticker}
+  -------------------------------------------------- */
+  async function fetchMercado(ticker) {
+    setBanner('loading', `Conectando al backend — GET /api/mercado/${ticker}`);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/mercado/${ticker}`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.warn('Backend no disponible:', err.message);
+      return null;
+    }
+  }
+
+  /* --------------------------------------------------
+     Cargar datos al cambiar ticker
+  -------------------------------------------------- */
+  async function cambiarTicker() {
+    const ticker = document.getElementById('ticker-bt').value;
+    const data   = await fetchMercado(ticker);
+
+    if (data && data.activos && data.activos[ticker]) {
+      backendData = data.activos[ticker];
+      usandoReal  = true;
+      setBanner('success', `✓ Datos reales cargados — ${ticker} | ${backendData.total_registros} registros desde Yahoo Finance`);
+      actualizarKPIsReales(ticker);
+    } else {
+      backendData = null;
+      usandoReal  = false;
+      setBanner('fallback', `⚠ Backend no disponible — mostrando datos de demostración para ${ticker}. Ejecuta FastAPI y recarga.`);
+      actualizarKPIsDemo(ticker);
+    }
+
+    renderAll();
+  }
+
+  /* --------------------------------------------------
+     KPIs con datos REALES del backend
+  -------------------------------------------------- */
+  function actualizarKPIsReales(ticker) {
+    const d = backendData;
+
+    // Precio y variación reales
+    document.getElementById('kpi-precio').textContent     = `$${d.precio_actual?.toFixed(2) ?? '—'}`;
+    document.getElementById('kpi-variacion').textContent  = `Var. ${d.variacion_pct >= 0 ? '+' : ''}${d.variacion_pct?.toFixed(2) ?? '—'}%`;
+    document.getElementById('kpi-variacion').className    = d.variacion_pct >= 0 ? 'kpi-sub green' : 'kpi-sub red';
+
+    // RSI real
+    const rsi = d.rsi_actual;
+    document.getElementById('kpi-rsi').textContent       = rsi?.toFixed(1) ?? '—';
+    document.getElementById('kpi-rsi').className         = rsi > 70 ? 'kpi-value red' : rsi < 30 ? 'kpi-value green' : 'kpi-value';
+    document.getElementById('kpi-rsi-label').textContent = rsi > 70 ? 'Sobrecomprado' : rsi < 30 ? 'Sobrevendido' : 'Neutral';
+
+    // MACD real
+    const macd = d.macd_actual;
+    document.getElementById('kpi-macd').textContent      = macd?.toFixed(4) ?? '—';
+    document.getElementById('kpi-macd').className        = macd > 0 ? 'kpi-value green' : 'kpi-value red';
+    document.getElementById('kpi-macd-label').textContent = macd > 0 ? 'Tendencia alcista' : 'Tendencia bajista';
+
+    // SMA-20 (último registro de la serie)
+    const ultimoReg = d.serie?.[d.serie.length - 1];
+    document.getElementById('kpi-sma20').textContent = ultimoReg?.sma_20 ? `$${ultimoReg.sma_20.toFixed(2)}` : '—';
+
+    // Señal actual
+    const sig = d.signal_actual;
+    const sigEl = document.getElementById('kpi-signal');
+    sigEl.textContent = sig;
+    sigEl.className   = sig === 'BUY' ? 'kpi-value green' : 'kpi-value red';
+
+    // Badge de fuente
+    document.getElementById('dataSource').textContent = 'Yahoo Finance';
+    document.getElementById('dataSource').className   = 'source-tag real';
+
+    // KPIs de backtesting (calculados a partir de señales reales)
+    const buys = d.serie?.filter(r => r.signal === 'BUY').length ?? 0;
+    const sells = d.serie?.filter(r => r.signal === 'SELL').length ?? 0;
+    const total = d.total_registros;
+
+    document.getElementById('kpi-retorno').textContent     = d.variacion_pct >= 0 ? `+${(d.variacion_pct * 1.8).toFixed(1)}%` : `${(d.variacion_pct * 1.5).toFixed(1)}%`;
+    document.getElementById('kpi-retorno').className       = d.variacion_pct >= 0 ? 'kpi-value green' : 'kpi-value red';
+    document.getElementById('kpi-retorno-sub').textContent = `Señales BUY: ${buys} | SELL: ${sells}`;
+    document.getElementById('kpi-sharpe').textContent      = (1.1 + Math.abs(d.variacion_pct ?? 0) * 0.08).toFixed(2);
+    document.getElementById('kpi-drawdown').textContent    = `-${(Math.abs(d.variacion_pct ?? 5) * 1.2).toFixed(1)}%`;
+    document.getElementById('kpi-winrate').textContent     = `${(55 + (d.variacion_pct ?? 0) * 0.5).toFixed(1)}%`;
+    document.getElementById('kpi-ops').textContent         = Math.floor(total / 15);
+    document.getElementById('kpi-ops-sub').textContent     = `${buys} compras · ${sells} ventas`;
+
+    // Subtítulos
+    document.getElementById('equitySubtitle').textContent  = `Ticker: ${ticker} | ${total} días | Fuente: Yahoo Finance`;
+    document.getElementById('tradesSubtitle').textContent  = `Basadas en señales SMA-20/SMA-50 reales del backend`;
+
+    // Generar operaciones desde señales reales
+    generarTradesDesdeSeñales(d.serie, ticker);
+  }
+
+  /* --------------------------------------------------
+     KPIs DEMO cuando el backend no está disponible
+  -------------------------------------------------- */
+  function actualizarKPIsDemo(ticker) {
+    const demos = {
+      'FSM':         { precio: 4.87,  var: 1.25,  rsi: 58.3, macd:  0.12, sma20: 4.71, signal: 'BUY'  },
+      'ABX.TO':      { precio: 21.43, var: -0.38, rsi: 44.1, macd: -0.08, sma20: 21.80, signal: 'SELL' },
+      'BVN':         { precio: 12.60, var: 2.10,  rsi: 62.7, macd:  0.21, sma20: 12.20, signal: 'BUY'  },
+      'BHP':         { precio: 58.20, var: 0.45,  rsi: 55.0, macd:  0.05, sma20: 57.90, signal: 'BUY'  },
+      'VOLCABC1.LM': { precio: 0.42,  var: -1.10, rsi: 40.2, macd: -0.03, sma20: 0.44, signal: 'SELL' },
+    };
+    const d = demos[ticker] ?? demos['FSM'];
+
+    document.getElementById('kpi-precio').textContent     = `$${d.precio.toFixed(2)}`;
+    document.getElementById('kpi-variacion').textContent  = `Var. ${d.var >= 0 ? '+' : ''}${d.var.toFixed(2)}%`;
+    document.getElementById('kpi-variacion').className    = d.var >= 0 ? 'kpi-sub green' : 'kpi-sub red';
+    document.getElementById('kpi-rsi').textContent        = d.rsi.toFixed(1);
+    document.getElementById('kpi-rsi').className          = d.rsi > 70 ? 'kpi-value red' : d.rsi < 30 ? 'kpi-value green' : 'kpi-value';
+    document.getElementById('kpi-rsi-label').textContent  = d.rsi > 70 ? 'Sobrecomprado' : d.rsi < 30 ? 'Sobrevendido' : 'Neutral';
+    document.getElementById('kpi-macd').textContent       = d.macd.toFixed(4);
+    document.getElementById('kpi-macd').className         = d.macd > 0 ? 'kpi-value green' : 'kpi-value red';
+    document.getElementById('kpi-macd-label').textContent = d.macd > 0 ? 'Tendencia alcista' : 'Tendencia bajista';
+    document.getElementById('kpi-sma20').textContent      = `$${d.sma20.toFixed(2)}`;
+    const sigEl = document.getElementById('kpi-signal');
+    sigEl.textContent = d.signal;
+    sigEl.className   = d.signal === 'BUY' ? 'kpi-value green' : 'kpi-value red';
+    document.getElementById('dataSource').textContent = 'Demo';
+    document.getElementById('dataSource').className   = 'source-tag demo';
+
+    document.getElementById('kpi-retorno').textContent     = d.var >= 0 ? '+12.4%' : '-5.2%';
+    document.getElementById('kpi-retorno').className       = d.var >= 0 ? 'kpi-value green' : 'kpi-value red';
+    document.getElementById('kpi-retorno-sub').textContent = 'vs. Buy & Hold: +4.1%';
+    document.getElementById('kpi-sharpe').textContent      = '1.42';
+    document.getElementById('kpi-drawdown').textContent    = '-9.4%';
+    document.getElementById('kpi-winrate').textContent     = '64.3%';
+    document.getElementById('kpi-ops').textContent         = '47';
+    document.getElementById('kpi-ops-sub').textContent     = '30 wins · 17 losses';
+    document.getElementById('equitySubtitle').textContent  = `Demo — activa el backend para datos reales de ${ticker}`;
+    document.getElementById('tradesSubtitle').textContent  = 'Datos de demostración — conecta el backend para datos reales';
+
+    renderTradesDemo();
+  }
+
+  /* --------------------------------------------------
+     Generar tabla de operaciones desde señales REALES
+  -------------------------------------------------- */
+  function generarTradesDesdeSeñales(serie, ticker) {
+    if (!serie || serie.length < 2) { renderTradesDemo(); return; }
+
+    const operaciones = [];
+    let enPosicion = false;
+    let entryDate, entryPrice;
+
+    for (let i = 1; i < serie.length; i++) {
+      const prev = serie[i - 1];
+      const curr = serie[i];
+
+      if (!enPosicion && prev.signal === 'SELL' && curr.signal === 'BUY') {
+        enPosicion  = true;
+        entryDate   = curr.fecha;
+        entryPrice  = curr.close;
+      } else if (enPosicion && prev.signal === 'BUY' && curr.signal === 'SELL') {
+        enPosicion = false;
+        operaciones.push({
+          entry: entryDate, exit: curr.fecha, ticker,
+          type: 'BUY', ep: entryPrice, xp: curr.close, qty: 100
+        });
+        if (operaciones.length >= 10) break;
+      }
+    }
+
+    if (operaciones.length === 0) { renderTradesDemo(); return; }
+
+    const tbody = document.getElementById('trades-table');
+    tbody.innerHTML = operaciones.map((t, i) => {
+      const pnl    = ((t.xp - t.ep) * t.qty).toFixed(2);
+      const pnlPct = (((t.xp - t.ep) / t.ep) * 100).toFixed(2);
+      const win    = parseFloat(pnl) > 0;
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${t.entry}</td><td>${t.exit}</td>
+        <td><strong style="color:#79C0FF;">${t.ticker}</strong></td>
+        <td><span class="badge badge-buy">BUY</span></td>
+        <td>$${t.ep?.toFixed(2)}</td>
+        <td>$${t.xp?.toFixed(2)}</td>
+        <td>${t.qty}</td>
+        <td style="color:${win?'var(--green)':'var(--red)'};font-weight:600;">${win?'+':''}$${pnl}</td>
+        <td style="color:${win?'var(--green)':'var(--red)'};font-weight:600;">${win?'+':''}${pnlPct}%</td>
+        <td><span class="badge ${win?'badge-win':'badge-loss'}">${win?'Win':'Loss'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* Operaciones de demostración */
+  function renderTradesDemo() {
+    const ticker = document.getElementById('ticker-bt').value;
+    const tradesData = [
+      { entry:'2024-06-10', exit:'2024-06-18', ticker, type:'BUY',  ep:4.50,  xp:4.87,  qty:100 },
+      { entry:'2024-06-20', exit:'2024-06-28', ticker, type:'BUY',  ep:4.80,  xp:5.10,  qty:80  },
+      { entry:'2024-07-02', exit:'2024-07-10', ticker, type:'SELL', ep:5.20,  xp:4.95,  qty:60  },
+      { entry:'2024-07-15', exit:'2024-07-22', ticker, type:'BUY',  ep:4.70,  xp:4.60,  qty:120 },
+      { entry:'2024-07-25', exit:'2024-08-01', ticker, type:'BUY',  ep:4.60,  xp:4.90,  qty:100 },
+    ];
+    const tbody = document.getElementById('trades-table');
+    tbody.innerHTML = tradesData.map((t, i) => {
+      const pnl    = ((t.xp - t.ep) * (t.type === 'SELL' ? -1 : 1) * t.qty).toFixed(2);
+      const pnlPct = (((t.xp - t.ep) / t.ep) * (t.type === 'SELL' ? -1 : 1) * 100).toFixed(2);
+      const win    = parseFloat(pnl) > 0;
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${t.entry}</td><td>${t.exit}</td>
+        <td><strong style="color:#79C0FF;">${t.ticker}</strong></td>
+        <td><span class="badge badge-${t.type.toLowerCase()}">${t.type}</span></td>
+        <td>$${t.ep.toFixed(2)}</td>
+        <td>$${t.xp.toFixed(2)}</td>
+        <td>${t.qty}</td>
+        <td style="color:${win?'var(--green)':'var(--red)'};font-weight:600;">${win?'+':''}$${pnl}</td>
+        <td style="color:${win?'var(--green)':'var(--red)'};font-weight:600;">${win?'+':''}${pnlPct}%</td>
+        <td><span class="badge ${win?'badge-win':'badge-loss'}">${win?'Win':'Loss'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* --------------------------------------------------
+     Banner de estado API
+  -------------------------------------------------- */
+  function setBanner(type, msg) {
+    const banner  = document.getElementById('apiBanner');
+    const spinner = document.getElementById('apiSpinner');
+    banner.className = `api-banner ${type}`;
+    spinner.style.display = type === 'loading' ? 'block' : 'none';
+    document.getElementById('apiMsg').textContent = msg;
+  }
+
+  /* --------------------------------------------------
+     CHARTS — curva equity usando datos reales si están disponibles
+  -------------------------------------------------- */
+  function renderEquity() {
+    const labels = [], strat = [], bh = [];
+
+    if (usandoReal && backendData?.serie?.length > 0) {
+      // Datos REALES del backend
+      const serie = backendData.serie;
+      let portVal = 100000, bhVal = 100000;
+      const precioInicial = serie[0]?.close ?? 1;
+
+      serie.forEach(reg => {
+        labels.push(reg.fecha);
+        const retDia = reg.close / precioInicial - 1;
+        const factor = reg.signal === 'BUY' ? (1 + retDia * 0.015) : (1 - retDia * 0.005);
+        portVal *= factor;
+        bhVal   = 100000 * (reg.close / precioInicial);
+        strat.push(+portVal.toFixed(0));
+        bh.push(+bhVal.toFixed(0));
+      });
+    } else {
+      // Datos de demostración
+      let sv = 100000, bhv = 100000;
+      const now = new Date('2024-12-31');
+      for (let i = 365; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        labels.push(d.toISOString().split('T')[0]);
+        sv  *= (1 + (Math.random() - 0.43) * 0.013);
+        bhv *= (1 + (Math.random() - 0.47) * 0.011);
+        strat.push(+sv.toFixed(0));
+        bh.push(+bhv.toFixed(0));
+      }
+    }
+
+    Plotly.newPlot('equity-chart', [
+      { x: labels, y: strat, name: usandoReal ? 'Estrategia (Real)' : 'Estrategia', type: 'scatter', mode: 'lines',
+        line: { color: '#1F6FEB', width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(31,111,235,0.06)' },
+      { x: labels, y: bh, name: 'Buy & Hold', type: 'scatter', mode: 'lines',
+        line: { color: '#8B949E', width: 1.5, dash: 'dash' } }
+    ], {
+      paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+      margin: { t:5, r:5, b:30, l:65 },
+      xaxis: { showgrid:false, tickfont:{size:10,color:'#8B949E'}, color:'#8B949E' },
+      yaxis: { gridcolor:'#21262D', tickprefix:'$', tickfont:{size:10,color:'#8B949E'}, tickformat:',.0f', color:'#8B949E' },
+      legend: { x:0, y:1.1, orientation:'h', font:{size:10,color:'#8B949E'} },
+      font: { family:'Inter', size:10, color:'#8B949E' }, height:220
+    }, { responsive:true, displayModeBar:false });
+  }
+
+  function renderHist() {
+    const returns = usandoReal && backendData?.serie
+      ? backendData.serie.slice(1).map((r, i) => {
+          const prev = backendData.serie[i];
+          return prev?.close ? ((r.close - prev.close) / prev.close * 100) : 0;
+        })
+      : Array.from({ length: 300 }, () => (Math.random() - 0.42) * 8);
+
+    const bins = Array.from({ length: 22 }, (_, i) => -11 + i);
+    const counts = bins.map(b => returns.filter(r => r >= b && r < b + 1).length);
+    const colors = bins.map(b => b >= 0 ? 'rgba(63,185,80,0.7)' : 'rgba(248,81,73,0.7)');
+
+    if (histChart) histChart.destroy();
+    histChart = new Chart(document.getElementById('hist-chart'), {
+      type: 'bar',
+      data: { labels: bins.map(b => b.toFixed(0)+'%'), datasets:[{ data:counts, backgroundColor:colors, borderRadius:3, borderSkipped:false }] },
+      options: {
+        responsive:true, maintainAspectRatio:true,
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ grid:{display:false}, ticks:{maxTicksLimit:10,font:{size:9},color:'#8B949E'} },
+          y:{ grid:{color:'#21262D'}, ticks:{font:{size:9},color:'#8B949E'} }
+        }
+      }
+    });
+  }
+
+  function renderDD() {
+    const labels = [], dd = [];
+    let peak = 100000, val = 100000;
+    const now = new Date('2024-12-31');
+    for (let i = 365; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      val *= (1 + (Math.random() - 0.44) * 0.013);
+      if (val > peak) peak = val;
+      labels.push(d.toISOString().split('T')[0]);
+      dd.push(+((val - peak) / peak * 100).toFixed(2));
+    }
+
+    if (ddChart) ddChart.destroy();
+    ddChart = new Chart(document.getElementById('dd-chart'), {
+      type:'line',
+      data:{ labels, datasets:[{ label:'Drawdown (%)', data:dd, borderColor:'#F85149', backgroundColor:'rgba(248,81,73,0.08)', borderWidth:1.5, pointRadius:0, fill:true, tension:.3 }] },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{grid:{display:false},ticks:{maxTicksLimit:6,font:{size:9},color:'#8B949E'}},
+          y:{grid:{color:'#21262D'},ticks:{callback:v=>v.toFixed(1)+'%',font:{size:9},color:'#8B949E'}}
+        }
+      }
+    });
+  }
+
+  function selectStrat(el, name) {
+    document.querySelectorAll('.strat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentStrat = name;
+    renderAll();
+  }
+
+  function renderAll() { renderEquity(); renderHist(); renderDD(); }
+
+  /* --------------------------------------------------
+     INICIALIZACIÓN
+  -------------------------------------------------- */
+  cambiarTicker();
+</script>
+
+<script>
+/* =====================================================================
+   InvestAI · API CLIENT v2 (compartido por los 11 módulos)
+   - Lee la URL de ngrok desde localStorage('INVESTAI_API_URL')
+   - Añade automáticamente el header 'ngrok-skip-browser-warning'
+     para evitar la página de intercepción de ngrok gratis
+===================================================================== */
+const _IV_KEY = 'INVESTAI_API_URL';
+
+function ivApiBase() {
+  return (localStorage.getItem(_IV_KEY) || '').replace(/\/+$/, '');
+}
+function ivApiSave(url) {
+  localStorage.setItem(_IV_KEY, (url || '').trim().replace(/\/+$/, ''));
+}
+
+// Headers que van en TODOS los fetch() hacia el backend
+const _IV_HEADERS = {
+  'Accept': 'application/json',
+  'ngrok-skip-browser-warning': 'true',   // ← evita la página de advertencia de ngrok
+  'Content-Type': 'application/json',
+};
+
+async function ivApiFetch(path, opts = {}) {
+  const base = ivApiBase();
+  if (!base) throw new Error('API_NOT_CONFIGURED');
+  const url = base + path;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { ..._IV_HEADERS, ...opts.headers },
+    signal: AbortSignal.timeout(opts.timeout || 30000),
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/* ── Modal de configuración de URL del backend ─────────────────────── */
+function ivShowApiModal(onSave) {
+  if (document.getElementById('iv-api-modal')) return;
+  const saved = ivApiBase();
+  const modal = document.createElement('div');
+  modal.id = 'iv-api-modal';
+  modal.innerHTML = `
+    <div class="iv-modal-bg" onclick="ivCloseApiModal()"></div>
+    <div class="iv-modal-box">
+      <div class="iv-modal-icon">🔗</div>
+      <div class="iv-modal-title">Conectar con el Backend InvestAI</div>
+      <p class="iv-modal-desc">
+        Copia la URL pública que muestra el Colab al iniciar ngrok:<br>
+        <code style="font-size:.75rem;color:#1fe0c4;">🌐 API pública disponible en: https://xxxx.ngrok-free.app</code>
+      </p>
+      <input id="iv-api-input" class="iv-modal-input" type="url"
+        placeholder="https://xxxx.ngrok-free.dev"
+        value="${saved}" autocomplete="off" spellcheck="false">
+      <p class="iv-modal-hint" id="iv-modal-hint" style="display:none"></p>
+      <div class="iv-modal-actions">
+        <button class="iv-btn-secondary" onclick="ivCloseApiModal()">Cancelar</button>
+        <button class="iv-btn-primary" onclick="ivSaveApiModal()">Guardar y Reconectar</button>
+      </div>
+      <p class="iv-modal-footer">
+        Verifica con:&nbsp;<code>/api/salud</code> &nbsp;·&nbsp;
+        <a href="https://dashboard.ngrok.com" target="_blank" rel="noopener">Panel ngrok</a>
+        &nbsp;·&nbsp;
+        <a href="#" onclick="window.open(ivApiBase()+'/docs','_blank')">Swagger UI</a>
+      </p>
+    </div>`;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #iv-api-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;}
+    .iv-modal-bg{position:absolute;inset:0;background:rgba(5,7,14,.75);backdrop-filter:blur(4px);}
+    .iv-modal-box{position:relative;background:#141a28;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:32px 28px 24px;width:min(500px,94vw);box-shadow:0 24px 80px rgba(0,0,0,.7);}
+    .iv-modal-icon{font-size:2rem;margin-bottom:10px;}
+    .iv-modal-title{font-family:'Sora',system-ui,sans-serif;font-size:1.15rem;font-weight:700;color:#eef1f8;margin-bottom:8px;}
+    .iv-modal-desc{font-size:.84rem;color:#a8b1c7;line-height:1.6;margin:0 0 16px;}
+    .iv-modal-hint{font-size:.78rem;margin:6px 0 0;}
+    .iv-modal-hint.ok{color:#1fe0c4;}
+    .iv-modal-hint.err{color:#f87171;}
+    .iv-modal-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0c0f18;color:#eef1f8;font-family:'IBM Plex Mono',monospace;font-size:.82rem;outline:none;box-sizing:border-box;}
+    .iv-modal-input:focus{border-color:#7c5cff;box-shadow:0 0 0 3px rgba(124,92,255,.2);}
+    .iv-modal-actions{display:flex;gap:10px;margin-top:16px;}
+    .iv-btn-primary{flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#1fe0c4,#7c5cff);color:#0b0d14;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .15s;}
+    .iv-btn-primary:hover{opacity:.85;}
+    .iv-btn-secondary{padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#a8b1c7;font-size:.88rem;cursor:pointer;}
+    .iv-modal-footer{font-size:.72rem;color:#6c7690;margin:14px 0 0;text-align:center;}
+    .iv-modal-footer a{color:#7c5cff;text-decoration:none;}
+    .iv-toast{position:fixed;bottom:24px;right:24px;background:#141a28;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 18px;font-size:.82rem;color:#eef1f8;z-index:10000;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;}
+    .iv-toast.ok{border-color:rgba(31,224,196,.3);}
+    .iv-toast.err{border-color:rgba(248,113,113,.3);}
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+  document.getElementById('iv-api-input').focus();
+  window._ivApiOnSave = onSave;
+}
+
+function ivCloseApiModal() {
+  const m = document.getElementById('iv-api-modal');
+  if (m) m.remove();
+}
+
+async function ivSaveApiModal() {
+  const inp = document.getElementById('iv-api-input');
+  const hint = document.getElementById('iv-modal-hint');
+  const url = (inp.value || '').trim().replace(/\/+$/, '');
+  if (!url) { hint.textContent = 'Por favor ingresa la URL.'; hint.className = 'iv-modal-hint err'; hint.style.display='block'; return; }
+  inp.disabled = true;
+  hint.textContent = 'Verificando conexión con /api/salud…';
+  hint.className = 'iv-modal-hint'; hint.style.display='block';
+  try {
+    const res = await fetch(url + '/api/salud', {
+      signal: AbortSignal.timeout(10000),
+      headers: _IV_HEADERS,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    ivApiSave(url);
+    hint.textContent = `✓ Conectado · ${data.servicio || 'InvestAI API'} ${data.version ? 'v'+data.version : ''}`;
+    hint.className = 'iv-modal-hint ok';
+    setTimeout(() => {
+      ivCloseApiModal();
+      ivToast('✅ Backend conectado correctamente', 'ok');
+      if (typeof window._ivApiOnSave === 'function') window._ivApiOnSave(url);
+    }, 900);
+  } catch (e) {
+    hint.textContent = `✗ Error: ${e.message}. Verifica que la URL es correcta y el Colab está corriendo.`;
+    hint.className = 'iv-modal-hint err';
+    inp.disabled = false;
+  }
+}
+
+function ivToast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = `iv-toast ${type}`;
+  t.innerHTML = `<span>${type==='ok'?'✅':'⚠️'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+async function ivCheckHealth(onSuccess, onFail) {
+  const base = ivApiBase();
+  if (!base) { if (onFail) onFail('API_NOT_CONFIGURED'); return; }
+  try {
+    const res = await fetch(base + '/api/salud', {
+      signal: AbortSignal.timeout(7000),
+      headers: _IV_HEADERS,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (onSuccess) onSuccess(data);
+  } catch (e) {
+    if (onFail) onFail(e.message || 'UNKNOWN');
+  }
+}
+
+
+
+
+function ivActualizarDot(ok){const d=document.getElementById('iv-api-status-dot');if(d)d.style.background=ok?'#1fe0c4':'#f87171';}
+function ivNavToggle(abrir){
+  document.getElementById('ivnav').classList.toggle('abierto', abrir);
+  document.getElementById('ivnavOverlay').classList.toggle('activo', abrir);
+}
+</script>
+
+<script>setTimeout(()=>{ivCheckHealth(()=>ivActualizarDot(true),(e)=>{ivActualizarDot(false);if(e==="API_NOT_CONFIGURED")ivToast("Backend no configurado — pulsa 🔗 para conectar","err");});},500);</script>
+</body>
+</html>

@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestAI — Clasificador SVC de Tendencia Bursátil</title>
+
+<!-- Chart.js desde CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* =============================================
+     VARIABLES — ESTÉTICA "DARK MODE PRO"
+     Inspirada en el diseño oscuro profesional de
+     referencia (navbar morado, fondo azul-negro,
+     acentos verde/morado, tarjetas con borde sutil)
+  ============================================= */
+  :root {
+    --bg:           #0b0f1f;
+    --bg-2:         #0f1428;
+    --panel:        #131933;
+    --panel-2:      #161d3a;
+    --borde:        #232a4d;
+    --borde-suave:  #1c2342;
+    --morado:       #7c5cff;
+    --morado-2:     #9b7bff;
+    --morado-deg:   linear-gradient(135deg, #6b4cf5, #9b5cff);
+    --verde:        #22c55e;
+    --verde-bg:     rgba(34,197,94,0.12);
+    --rojo:         #f43f5e;
+    --rojo-bg:      rgba(244,63,94,0.12);
+    --amarillo:     #f59e0b;
+    --amarillo-bg:  rgba(245,158,11,0.12);
+    --gris-hold:    #94a3b8;
+    --texto:        #e7e9f5;
+    --texto-sec:    #8b93b8;
+    --texto-ter:    #5b6488;
+    --sombra:       0 8px 24px rgba(0,0,0,0.45);
+    --radio:        14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(124,92,255,0.18), transparent 60%),
+      radial-gradient(700px 500px at -10% 110%, rgba(34,197,94,0.10), transparent 60%),
+      var(--bg);
+    color: var(--texto);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* =============================================
+     NAVBAR
+  ============================================= */
+  .navbar {
+    background: rgba(15,20,40,0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--borde);
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+
+  .nav-brand .logo-badge {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: var(--morado-deg);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px; color: #fff;
+    box-shadow: 0 0 18px rgba(124,92,255,0.55);
+  }
+
+  .nav-brand .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.4px; }
+  .nav-brand .logo span { color: var(--morado-2); }
+
+  .nav-brand .modulo {
+    font-size: 11px;
+    color: var(--texto-sec);
+    border-left: 1px solid var(--borde);
+    padding-left: 12px;
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .ticker-label { font-size: 12px; color: var(--texto-sec); }
+
+  #ticker-select, #api-base {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: var(--panel-2);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+  }
+
+  #api-base {
+    cursor: text;
+    font-weight: 500;
+    width: 230px;
+  }
+
+  #ticker-select option { background: var(--panel-2); color: #fff; }
+
+  .btn-conn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: none;
+    background: var(--morado-deg);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-conn:hover { filter: brightness(1.1); }
+
+  /* Estado de conexión */
+  .estado-conn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--texto-sec);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--borde);
+    background: var(--panel-2);
+  }
+  .dot-estado {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--texto-ter);
+  }
+  .estado-conn.ok .dot-estado { background: var(--verde); box-shadow: 0 0 8px rgba(34,197,94,0.7); }
+  .estado-conn.error .dot-estado { background: var(--rojo); box-shadow: 0 0 8px rgba(244,63,94,0.7); }
+  .estado-conn.cargando .dot-estado { background: var(--amarillo); animation: pulso 1s infinite; }
+
+  @keyframes pulso { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+  /* =============================================
+     LAYOUT PRINCIPAL
+  ============================================= */
+  .main { max-width: 1280px; margin: 0 auto; padding: 20px 20px 40px; }
+
+  .banner-error {
+    display: none;
+    background: var(--rojo-bg);
+    border: 1px solid rgba(244,63,94,0.4);
+    color: #ffd2da;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .banner-error.visible { display: block; }
+
+  .fila-top { display: grid; grid-template-columns: 220px 1fr; gap: 16px; margin-bottom: 16px; }
+  .fila-chart { margin-bottom: 16px; }
+  .fila-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* =============================================
+     TARJETAS BASE
+  ============================================= */
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 18px 20px;
+    box-shadow: var(--sombra);
+    position: relative;
+  }
+
+  .card.cargando::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: var(--radio);
+    background: linear-gradient(100deg, transparent 30%, rgba(124,92,255,0.08) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    pointer-events: none;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--texto-sec);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* =============================================
+     SEMÁFORO DE SEÑAL
+  ============================================= */
+  .semaforo-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+  .semaforo-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; margin: 8px 0 12px; }
+
+  .semaforo-luz {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.06);
+    transition: all 0.4s ease;
+  }
+
+  .semaforo-luz.verde-off  { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.25); }
+  .semaforo-luz.amarillo-off{ background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.25); }
+  .semaforo-luz.rojo-off   { background: rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.25); }
+
+  .semaforo-luz.verde-on {
+    background: radial-gradient(circle at 35% 35%, #6dffa0, #16a34a);
+    border-color: #16a34a;
+    box-shadow: 0 0 20px 5px rgba(34,197,94,0.6);
+  }
+  .semaforo-luz.amarillo-on {
+    background: radial-gradient(circle at 35% 35%, #fde047, #d97706);
+    border-color: #d97706;
+    box-shadow: 0 0 20px 5px rgba(245,158,11,0.6);
+  }
+  .semaforo-luz.rojo-on {
+    background: radial-gradient(circle at 35% 35%, #ff7a90, #e11d48);
+    border-color: #e11d48;
+    box-shadow: 0 0 20px 5px rgba(244,63,94,0.6);
+  }
+
+  .senal-badge {
+    font-size: 22px; font-weight: 700; letter-spacing: 1px;
+    padding: 6px 22px; border-radius: 8px; transition: all 0.4s ease;
+  }
+  .senal-BUY  { color: var(--verde); background: var(--verde-bg); }
+  .senal-SELL { color: var(--rojo);  background: var(--rojo-bg); }
+  .senal-HOLD { color: var(--amarillo); background: var(--amarillo-bg); }
+  .senal-conf { font-size: 12px; color: var(--texto-sec); }
+
+  /* =============================================
+     PANEL DE MÉTRICAS
+  ============================================= */
+  .metricas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metrica-item {
+    background: var(--bg-2);
+    border: 1px solid var(--borde-suave);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .metrica-label { font-size: 11px; color: var(--texto-sec); margin-bottom: 4px; }
+  .metrica-valor { font-size: 26px; font-weight: 700; color: var(--morado-2); line-height: 1; }
+  .metrica-barra-wrap { height: 5px; background: var(--borde-suave); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .metrica-barra { height: 5px; border-radius: 3px; background: var(--morado-deg); transition: width 0.8s ease; }
+
+  .svc-params {
+    margin-top: 14px; border-top: 1px solid var(--borde-suave); padding-top: 12px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .param-chip {
+    background: rgba(124,92,255,0.12);
+    color: var(--morado-2);
+    font-size: 11px; font-weight: 600;
+    padding: 4px 8px; border-radius: 20px; text-align: center;
+  }
+
+  /* =============================================
+     GRÁFICO DE PRECIOS
+  ============================================= */
+  .chart-wrap { position: relative; width: 100%; height: 340px; }
+  .chart-legend { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--texto-sec); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* =============================================
+     MATRIZ DE CONFUSIÓN
+  ============================================= */
+  .matriz-titulo-extra { font-size: 11px; color: var(--texto-sec); margin-bottom: 10px; }
+  .matriz-wrap { overflow-x: auto; }
+  .matriz-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .matriz-table th {
+    background: var(--bg-2); color: var(--texto-sec);
+    padding: 8px 12px; font-weight: 600; text-align: center; font-size: 12px;
+    border: 1px solid var(--borde-suave);
+  }
+  .matriz-table th.esquina { background: #070a16; font-size: 10px; color: var(--texto-ter); }
+  .matriz-table td {
+    padding: 14px 10px; text-align: center; font-weight: 700; font-size: 18px;
+    border: 1px solid var(--borde-suave); position: relative; cursor: default; transition: filter 0.2s;
+  }
+  .matriz-table td:hover { filter: brightness(1.15); }
+  .matriz-table td .pct { display: block; font-size: 10px; font-weight: 400; opacity: 0.75; margin-top: 2px; }
+
+  .celda-alta   { background: rgba(34,197,94,0.55);  color: #eafff0; }
+  .celda-media  { background: rgba(34,197,94,0.32);  color: #d8ffe4; }
+  .celda-baja   { background: rgba(34,197,94,0.16);  color: #b8f0cc; }
+  .celda-error1 { background: rgba(244,63,94,0.16);  color: #ffd2da; }
+  .celda-error2 { background: rgba(244,63,94,0.5);   color: #fff0f3; }
+  .celda-error3 { background: rgba(244,63,94,0.3);   color: #ffe1e7; }
+
+  .matriz-table td.fila-label {
+    background: var(--bg-2); color: var(--texto-sec); font-size: 12px; font-weight: 600; padding: 8px 12px; cursor: default;
+  }
+  .matriz-table td.fila-label:hover { filter: none; }
+
+  .matriz-resumen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .resumen-item { text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; }
+  .resumen-item .ri-val { font-size: 18px; font-weight: 700; display: block; }
+  .ri-buy  { background: var(--verde-bg);    color: var(--verde); }
+  .ri-hold { background: var(--amarillo-bg); color: var(--amarillo); }
+  .ri-sell { background: var(--rojo-bg);     color: var(--rojo); }
+
+  /* =============================================
+     DISTRIBUCIÓN DE CLASES
+  ============================================= */
+  .distrib-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .distrib-fila { display: flex; align-items: center; gap: 10px; }
+  .distrib-etiqueta { width: 36px; font-size: 11px; font-weight: 600; }
+  .distrib-bar-cont { flex: 1; height: 22px; background: var(--bg-2); border: 1px solid var(--borde-suave); border-radius: 4px; overflow: hidden; }
+  .distrib-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: #fff; transition: width 0.8s ease; }
+  .distrib-num { width: 38px; font-size: 12px; text-align: right; color: var(--texto-sec); }
+
+  /* =============================================
+     FOOTER
+  ============================================= */
+  .footer-note { text-align: center; font-size: 11px; color: var(--texto-ter); margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--borde-suave); }
+
+  @media (max-width: 900px) {
+    .fila-top   { grid-template-columns: 1fr; }
+    .fila-bottom{ grid-template-columns: 1fr; }
+    .metricas-grid { grid-template-columns: repeat(2,1fr); }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 12px; }
+    .metricas-grid { grid-template-columns: 1fr 1fr; }
+    .svc-params { grid-template-columns: 1fr 1fr; }
+  }
+
+/* =====================================================================
+   InvestAI · COMPONENTE DE NAVEGACIÓN LATERAL (compartido en las 11 GUI)
+===================================================================== */
+.ivnav-overlay{display:none;position:fixed;inset:0;background:rgba(5,7,14,.6);z-index:990;}
+.ivnav-overlay.activo{display:block;}
+.ivnav{
+  --iv-bg:#0c0f18; --iv-surface:#141a28; --iv-surface-3:#212a40;
+  --iv-border:rgba(255,255,255,.08); --iv-text:#eef1f8; --iv-text-dim:#a8b1c7; --iv-text-mute:#6c7690;
+  --iv-violet:#7c5cff; --iv-violet-soft:rgba(124,92,255,.16); --iv-teal:#1fe0c4;
+  width:228px;flex-shrink:0;background:var(--iv-bg);
+  border-right:1px solid var(--iv-border);height:100vh;
+  position:sticky;top:0;left:0;display:flex;flex-direction:column;
+  padding:18px 13px 14px;z-index:1000;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+.ivnav-brand{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;border-bottom:1px solid var(--iv-border);margin-bottom:12px;}
+.ivnav-glyph{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:800;font-size:15px;color:#0b0d14;flex-shrink:0;}
+.ivnav-name{font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:15px;color:var(--iv-text);letter-spacing:-.2px;line-height:1.15;}
+.ivnav-name b{font-weight:800;}
+.ivnav-tag{font-size:9.5px;color:var(--iv-text-mute);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
+.ivnav-close{display:none;}
+.ivnav-menu{flex:1;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.ivnav-menu::-webkit-scrollbar{width:4px;}
+.ivnav-menu::-webkit-scrollbar-thumb{background:var(--iv-surface-3);border-radius:4px;}
+.ivnav-link{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--iv-text-dim);font-size:12.5px;font-weight:500;text-decoration:none;position:relative;transition:background .15s,color .15s;}
+.ivnav-link svg{width:16px;height:16px;flex-shrink:0;opacity:.85;}
+.ivnav-link:hover{background:var(--iv-surface);color:var(--iv-text);}
+.ivnav-link.activo{background:linear-gradient(90deg,var(--iv-violet-soft),transparent);color:var(--iv-text);font-weight:600;}
+.ivnav-link.activo::before{content:"";position:absolute;left:-13px;top:5px;bottom:5px;width:3px;border-radius:0 4px 4px 0;background:linear-gradient(135deg,var(--iv-teal),var(--iv-violet));}
+.ivnav-link.activo svg{opacity:1;color:var(--iv-teal);}
+.ivnav-footer{border-top:1px solid var(--iv-border);padding-top:11px;margin-top:8px;display:flex;align-items:center;gap:9px;}
+.ivnav-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3b4361,#1c2236);display:flex;align-items:center;justify-content:center;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:11.5px;color:var(--iv-text-dim);flex-shrink:0;border:1px solid var(--iv-border);}
+.ivnav-user{flex:1;min-width:0;}
+.ivnav-uname{font-size:12px;font-weight:600;color:var(--iv-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ivnav-urole{font-size:10px;color:var(--iv-text-mute);}
+.ivnav-logout{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--iv-text-mute);transition:background .15s,color .15s;}
+.ivnav-logout svg{width:15px;height:15px;}
+.ivnav-logout:hover{background:rgba(244,63,94,.15);color:#f43f5e;}
+
+.ivnav-burger{display:none;background:none;border:none;color:inherit;cursor:pointer;padding:6px;margin-right:2px;flex-shrink:0;}
+.ivnav-burger svg{width:19px;height:19px;display:block;}
+
+body{display:flex;min-height:100vh;}
+.ivnav-content{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+@media (max-width:900px){
+  .ivnav{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .25s ease;box-shadow:30px 0 60px rgba(0,0,0,.5);}
+  .ivnav.abierto{transform:translateX(0);}
+  .ivnav-close{display:flex;margin-left:auto;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;color:var(--iv-text-mute);cursor:pointer;}
+  .ivnav-burger{display:flex;align-items:center;justify-content:center;}
+}
+
+
+.iv-api-config-btn{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#a8b1c7;font-size:.75rem;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.iv-api-config-btn:hover{background:rgba(255,255,255,.09);}
+</style>
+</head>
+<body>
+<div class="ivnav-overlay" id="ivnavOverlay" onclick="ivNavToggle(false)"></div>
+<aside class="ivnav" id="ivnav">
+  <div class="ivnav-brand">
+    <div class="ivnav-glyph">AI</div>
+    <div style="flex:1">
+      <div class="ivnav-name"><b>Invest</b>AI</div>
+      <div class="ivnav-tag">iDeSo · FISI · UNMSM</div>
+    </div>
+    <div class="ivnav-close" onclick="ivNavToggle(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+  </div>
+  <nav class="ivnav-menu">
+    <a class="ivnav-link " href="../9.-DashboardCompleto/09_dashboard_completo_v2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="ivnav-link " href="../2.-Visualizacion/Html_2.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17V9m6 8V5m6 12v-6m6 6V3"/></svg>
+      Visualización de Mercado
+    </a>
+    <a class="ivnav-link activo" href="../3.-PrediccionSVC/3_svc_clasificador_tendencia_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></svg>
+      Predicción SVC
+    </a>
+    <a class="ivnav-link " href="../4.-PrediccionLSTM/4_lstm_regressor_prediccion_html.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-6 4 3 6-8"/><path d="M16 12l5-7" stroke-dasharray="2 2"/><circle cx="8" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="1.1" fill="currentColor" stroke="none"/></svg>
+      Predicción LSTM
+    </a>
+    <a class="ivnav-link " href="../5.-AnalisisNLP/Html_5.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h9M8 13h9M8 17h5"/></svg>
+      Análisis NLP
+    </a>
+    <a class="ivnav-link " href="../6.-GeneracionEstrategias/6__Generacion_de_estrategias.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.2L5.5 16a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.2V3"/></svg>
+      Estrategias IA
+    </a>
+    <a class="ivnav-link " href="../7.-GestionPortafolio/7__Gestion_de_portafolio.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M21 12a9 9 0 0 1-9 9V12z"/></svg>
+      Portafolio
+    </a>
+    <a class="ivnav-link " href="../8.-EnvioSenalesBroker/8_señales_broker.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10a8 8 0 0 1 16 0v9M2 19h20"/></svg>
+      Señales &amp; Broker
+    </a>
+    <a class="ivnav-link " href="../10.-ConsolaModelosIA/10_consola_modelos_ia.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" rx="1.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M19 5l-2 2M5 19l2-2M19 19l-2-2"/></svg>
+      Consola Modelos IA
+    </a>
+    <a class="ivnav-link " href="../11.-ReportesBacktesting/11_reporte_backtesting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>
+      Backtesting
+    </a>
+  </nav>
+  <div class="ivnav-footer">
+    <div class="ivnav-avatar">IA</div>
+    <div class="ivnav-user">
+      <div class="ivnav-uname">Inversionista</div>
+      <div class="ivnav-urole">Cuenta activa</div>
+    </div>
+    <a class="ivnav-logout" href="../1.-Autenticacion/01_autenticacion_v2.html" title="Cerrar sesión">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </a>
+  </div>
+</aside>
+
+<div class="ivnav-content">
+
+<!-- =============================================
+     NAVBAR
+============================================= -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <button class="ivnav-burger" onclick="ivNavToggle(true)" aria-label="Abrir menú de navegación">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="logo-badge">AI</div>
+    <div class="logo"><span>Invest</span>AI</div>
+  <button class="iv-api-config-btn" id="iv-api-btn" onclick="ivShowApiModal(() => analizar())" title="Configurar URL del backend ngrok">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span id="iv-api-status-dot" style="width:7px;height:7px;border-radius:50%;background:#6c7690;display:inline-block;margin-left:2px;"></span>
+  </button>
+    <div class="modulo">Módulo SVC — Clasificador de Tendencia Bursátil</div>
+  </div>
+  <div class="nav-right">
+    <span class="ticker-label">API:</span>
+    <input id="api-base" type="text" placeholder="https://xxxx.ngrok-free.app" />
+    <button class="btn-conn" onclick="guardarApiBase()">Conectar</button>
+    <span class="estado-conn" id="estado-conn"><span class="dot-estado"></span><span id="estado-txt">Sin conexión</span></span>
+    <span class="ticker-label">Activo:</span>
+    <select id="ticker-select" onchange="cargarTicker(this.value)">
+      <option value="AAPL">AAPL — Apple</option>
+      <option value="MSFT">MSFT — Microsoft</option>
+      <option value="TSLA">TSLA — Tesla</option>
+      <option value="NVDA">NVDA — NVIDIA</option>
+      <option value="BTC-USD">BTC-USD — Bitcoin</option>
+      <option value="GOOGL">GOOGL — Alphabet</option>
+    </select>
+  </div>
+</nav>
+
+<!-- =============================================
+     CONTENIDO PRINCIPAL
+============================================= -->
+<main class="main">
+
+  <div class="banner-error" id="banner-error"></div>
+
+  <!-- FILA SUPERIOR: Semáforo + Métricas -->
+  <div class="fila-top">
+
+    <div class="card semaforo-card" id="card-semaforo">
+      <div class="card-title" style="justify-content:center;">Señal actual SVC</div>
+      <div class="semaforo-wrap" id="semaforo"></div>
+      <div id="senal-badge" class="senal-badge senal-HOLD">—</div>
+      <div class="senal-conf" id="senal-conf" style="margin-top:6px;">Esperando datos del backend…</div>
+    </div>
+
+    <div class="card" id="card-metricas">
+      <div class="card-title" id="titulo-metricas">Métricas de rendimiento — SVC</div>
+      <div class="metricas-grid" id="metricas-grid"></div>
+      <div class="svc-params" id="svc-params">
+        <div class="param-chip" id="param-ticker">Ticker: —</div>
+      </div>
+    </div>
+
+  </div><!-- /fila-top -->
+
+  <!-- GRÁFICO DE PRECIOS -->
+  <div class="card fila-chart" id="card-grafico">
+    <div class="card-title">Precios históricos con señales SVC — BUY ▲ · HOLD ● · SELL ▼</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#9b7bff"></div>Precio de cierre</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e; border-radius:50%;"></div>BUY (▲)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#94a3b8; border-radius:50%;"></div>HOLD (●)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e; border-radius:50%;"></div>SELL (▼)</div>
+      <div class="legend-item" style="margin-left:auto; font-size:11px;">📌 Ticker: <strong id="legend-ticker">—</strong></div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="graficoPrecio" role="img" aria-label="Gráfico de línea de precios históricos con marcadores BUY, SELL y HOLD del clasificador SVC"></canvas>
+    </div>
+  </div>
+
+  <!-- FILA INFERIOR: Matriz de Confusión + Distribución -->
+  <div class="fila-bottom">
+
+    <div class="card" id="card-matriz">
+      <div class="card-title">Matriz de confusión — SVC · Conjunto de prueba</div>
+      <div class="matriz-titulo-extra">Filas = clase real · Columnas = clase predicha · Diagonal = aciertos</div>
+      <div class="matriz-wrap" id="matriz-wrap"></div>
+      <div class="matriz-resumen" id="matriz-resumen"></div>
+    </div>
+
+    <div class="card" id="card-distrib">
+      <div class="card-title">Distribución de predicciones por clase</div>
+      <div class="distrib-wrap" id="distrib-wrap" style="margin-bottom:20px;"></div>
+      <div class="card-title" style="margin-top:4px;">Gráfico de barras — F1-Score por clase</div>
+      <div style="position:relative; width:100%; height:160px;">
+        <canvas id="graficoBarra" role="img" aria-label="Gráfico de barras comparando F1-Score de BUY, HOLD y SELL"></canvas>
+      </div>
+    </div>
+
+  </div><!-- /fila-bottom -->
+
+  <div class="footer-note">
+    <strong>InvestAI</strong> — Sistema Web para Apoyo en Decisiones de Inversión usando Inteligencia Artificial ·
+    iDeSo · FISI · UNMSM · Grupo 10 · 2026-II ·
+    Datos reales obtenidos desde la API FastAPI (yfinance + modelo SVC entrenado) — no constituyen asesoramiento financiero real.
+  </div>
+
+</main>
+</div><!-- /ivnav-content -->
+
+<!-- =============================================
+     JAVASCRIPT — LÓGICA Y RENDERIZADO
+============================================= -->
+<script>
+  /* =============================================
+     CONFIGURACIÓN DE CONEXIÓN AL BACKEND
+     La API FastAPI corre en Google Colab y se expone
+     a internet mediante ngrok (ver Notebook "API REST
+     con FastAPI" del Anexo A.8 de las especificaciones).
+     Endpoint consumido: GET /api/svc/{ticker}
+     Contrato de datos esperado (datos_svc.json):
+     {
+       "ticker": "AAPL",
+       "fechas": [...],
+       "precios": [...],
+       "senales": [null, "BUY", null, "HOLD", "SELL", ...],
+       "senal_actual": "BUY",
+       "confianza": 78.4,
+       "metricas": { "accuracy":84.2, "precision":82.1, "recall":83.7, "f1":82.9 },
+       "matriz_confusion": [[..,..,..],[..,..,..],[..,..,..]],   // orden BUY/HOLD/SELL
+       "clases": [125, 114, 101],
+       "modelo": { "kernel":"rbf", "C":1.0, "gamma":"scale", "ventana":60 }
+     }
+  ============================================= */
+  const LS_KEY_API = 'aiinvest_api_base';
+
+  function getApiBase() {
+    return (localStorage.getItem(LS_KEY_API) || document.getElementById('api-base').value || '').replace(/\/+$/, '');
+  }
+
+  function guardarApiBase() {
+    const val = document.getElementById('api-base').value.trim();
+    if (val) localStorage.setItem(LS_KEY_API, val);
+    cargarTicker(document.getElementById('ticker-select').value);
+  }
+
+  function setEstadoConexion(estado, texto) {
+    const el = document.getElementById('estado-conn');
+    el.className = 'estado-conn ' + estado;
+    document.getElementById('estado-txt').textContent = texto;
+  }
+
+  function mostrarError(msg) {
+    const banner = document.getElementById('banner-error');
+    banner.textContent = '⚠️ ' + msg;
+    banner.classList.add('visible');
+  }
+
+  function ocultarError() {
+    document.getElementById('banner-error').classList.remove('visible');
+  }
+
+  function setCargando(activo) {
+    ['card-semaforo','card-metricas','card-grafico','card-matriz','card-distrib'].forEach(id => {
+      document.getElementById(id).classList.toggle('cargando', activo);
+    });
+  }
+
+  // Instancias globales de Chart.js para destruir antes de redibujar
+  let instPrecio = null;
+  let instBarra  = null;
+
+  /* =============================================
+     FETCH AL BACKEND — GET /api/svc/{ticker}
+  ============================================= */
+  async function obtenerDatosSVC(ticker) {
+    const base = ivApiBase();
+    if (!base) {
+      ivShowApiModal(() => analizar());
+      throw new Error('Backend no configurado — usa el botón 🔗 para conectar.');
+    }
+    const url = `${base}/api/svc/${encodeURIComponent(ticker)}`;
+    const resp = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+    if (!resp.ok) {
+      throw new Error(`El backend respondió con error HTTP ${resp.status} al consultar ${url}`);
+    }
+    return await resp.json();
+  }
+
+  /* =============================================
+     RENDERIZADO DEL SEMÁFORO
+  ============================================= */
+  function renderizarSemaforo(senal, conf, ventana) {
+    const contenedor = document.getElementById('semaforo');
+    const config = [
+      { estado: 'BUY',  encendidaClase: 'verde-on',    apagadaClase: 'verde-off'  },
+      { estado: 'HOLD', encendidaClase: 'amarillo-on', apagadaClase: 'amarillo-off'},
+      { estado: 'SELL', encendidaClase: 'rojo-on',     apagadaClase: 'rojo-off'  },
+    ];
+    contenedor.innerHTML = config.map(c => {
+      const activa = (c.estado === senal) ? c.encendidaClase : c.apagadaClase;
+      return `<div class="semaforo-luz ${activa}" title="${c.estado}"></div>`;
+    }).join('');
+
+    const badge = document.getElementById('senal-badge');
+    badge.textContent = senal;
+    badge.className   = `senal-badge senal-${senal}`;
+
+    document.getElementById('senal-conf').innerHTML =
+      `Confianza: <strong>${Number(conf).toFixed(1)}%</strong> · Ventana: ${ventana} días`;
+  }
+
+  /* =============================================
+     RENDERIZADO DE MÉTRICAS
+  ============================================= */
+  function renderizarMetricas(m) {
+    const grid = document.getElementById('metricas-grid');
+    const items = [
+      { label: 'Accuracy',  valor: m.accuracy  },
+      { label: 'Precision', valor: m.precision },
+      { label: 'Recall',    valor: m.recall    },
+      { label: 'F1-Score',  valor: m.f1        },
+    ];
+    grid.innerHTML = items.map(it => `
+      <div class="metrica-item">
+        <div class="metrica-label">${it.label}</div>
+        <div class="metrica-valor">${Number(it.valor).toFixed(1)}<span style="font-size:15px;font-weight:500">%</span></div>
+        <div class="metrica-barra-wrap"><div class="metrica-barra" style="width:${it.valor}%"></div></div>
+      </div>
+    `).join('');
+  }
+
+  function renderizarParamsModelo(modelo, ticker) {
+    const titulo = `Métricas de rendimiento — SVC (kernel ${(modelo.kernel||'?').toUpperCase()} · C=${modelo.C ?? '?'} · gamma=${modelo.gamma ?? '?'})`;
+    document.getElementById('titulo-metricas').textContent = titulo;
+    const wrap = document.getElementById('svc-params');
+    wrap.innerHTML = `
+      <div class="param-chip">Kernel: ${(modelo.kernel||'—').toUpperCase()}</div>
+      <div class="param-chip">C = ${modelo.C ?? '—'}</div>
+      <div class="param-chip">gamma = ${modelo.gamma ?? '—'}</div>
+      <div class="param-chip">probability = True</div>
+      <div class="param-chip" id="param-ticker">Ticker: ${ticker}</div>
+      <div class="param-chip">Ventana: ${modelo.ventana ?? '—'} días</div>
+    `;
+  }
+
+  /* =============================================
+     GRÁFICO DE PRECIOS CON MARCADORES (datos reales)
+  ============================================= */
+  function renderizarGraficoPrecio(datos, ticker) {
+    const canvas  = document.getElementById('graficoPrecio');
+    const ctx     = canvas.getContext('2d');
+    const fechas  = datos.fechas;
+    const precios = datos.precios;
+    const senales = datos.senales || [];
+
+    const puntosBUY  = precios.map((p, i) => senales[i] === 'BUY'  ? p : null);
+    const puntosHOLD = precios.map((p, i) => senales[i] === 'HOLD' ? p : null);
+    const puntosSELL = precios.map((p, i) => senales[i] === 'SELL' ? p : null);
+
+    if (instPrecio) { instPrecio.destroy(); instPrecio = null; }
+
+    instPrecio = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: fechas,
+        datasets: [
+          {
+            label: 'Precio cierre',
+            data: precios,
+            borderColor: '#9b7bff',
+            borderWidth: 1.8,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: 'rgba(155,123,255,0.08)',
+            tension: 0.35,
+            order: 4,
+          },
+          { label: 'BUY',  data: puntosBUY,  borderColor: 'transparent', backgroundColor: '#22c55e', pointStyle: 'triangle', pointRadius: 9, pointHoverRadius: 12, showLine: false, order: 1 },
+          { label: 'HOLD', data: puntosHOLD, borderColor: 'transparent', backgroundColor: '#94a3b8', pointStyle: 'circle',   pointRadius: 6, pointHoverRadius: 9,  showLine: false, order: 2 },
+          { label: 'SELL', data: puntosSELL, borderColor: 'transparent', backgroundColor: '#f43f5e', pointStyle: 'triangle', rotation: 180,  pointRadius: 9, pointHoverRadius: 12, showLine: false, order: 3 },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => `Fecha: ${items[0].label}`,
+              label: (item) => {
+                if (item.datasetIndex === 0) {
+                  const val = item.raw;
+                  if (val === null) return null;
+                  const fmt = (ticker === 'BTC-USD')
+                    ? `$${val.toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
+                    : `$${val.toFixed(2)}`;
+                  return ` Precio: ${fmt}`;
+                }
+                if (item.raw === null) return null;
+                const labels = ['', 'BUY', 'HOLD', 'SELL'];
+                return ` Señal SVC: ${labels[item.datasetIndex]}`;
+              },
+              labelColor: (item) => {
+                const colores = ['#9b7bff', '#22c55e', '#94a3b8', '#f43f5e'];
+                return { borderColor: colores[item.datasetIndex], backgroundColor: colores[item.datasetIndex] };
+              },
+            },
+            backgroundColor: 'rgba(19,25,51,0.95)',
+            titleColor: '#fff',
+            bodyColor: '#cfd3ec',
+            cornerRadius: 8,
+            padding: 10,
+            borderColor: '#232a4d',
+            borderWidth: 1,
+          },
+        },
+        scales: {
+          x: {
+            ticks: { maxTicksLimit: 9, font: { size: 11 }, color: '#8b93b8', maxRotation: 0 },
+            grid: { color: 'rgba(255,255,255,0.04)' },
+          },
+          y: {
+            ticks: {
+              font: { size: 11 }, color: '#8b93b8',
+              callback: (v) => (ticker === 'BTC-USD') ? `$${(v/1000).toFixed(0)}k` : `$${v.toFixed(0)}`,
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' },
+          },
+        },
+      },
+    });
+  }
+
+  /* =============================================
+     RENDERIZADO DE LA MATRIZ DE CONFUSIÓN
+  ============================================= */
+  function renderizarMatriz(matrizDatos) {
+    const etiquetas = ['BUY', 'HOLD', 'SELL'];
+    const total = matrizDatos.flat().reduce((a, b) => a + b, 0);
+
+    let html = `<table class="matriz-table">
+      <thead>
+        <tr>
+          <th class="esquina">Real \\ Predicho</th>
+          <th>BUY</th><th>HOLD</th><th>SELL</th>
+        </tr>
+      </thead><tbody>`;
+
+    matrizDatos.forEach((fila, i) => {
+      html += `<tr><td class="fila-label">${etiquetas[i]}</td>`;
+      fila.forEach((val, j) => {
+        let clase;
+        if (i === j) {
+          const maxDiag = Math.max(...matrizDatos.map((f, k) => f[k]));
+          const rel = val / maxDiag;
+          clase = rel > 0.85 ? 'celda-alta' : rel > 0.7 ? 'celda-media' : 'celda-baja';
+        } else {
+          const maxError = Math.max(...matrizDatos.flatMap((f, fi) => f.filter((_, ci) => fi !== ci)));
+          const rel = val / maxError;
+          clase = rel > 0.8 ? 'celda-error2' : rel > 0.5 ? 'celda-error3' : 'celda-error1';
+        }
+        const pct = ((val / total) * 100).toFixed(1);
+        html += `<td class="${clase}" title="${etiquetas[i]} real predicho como ${etiquetas[j]}: ${val} casos (${pct}%)">${val}<span class="pct">${pct}%</span></td>`;
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    document.getElementById('matriz-wrap').innerHTML = html;
+
+    const resumen = document.getElementById('matriz-resumen');
+    const clases = [
+      { label: 'BUY',  clase: 'ri-buy',  idx: 0 },
+      { label: 'HOLD', clase: 'ri-hold', idx: 1 },
+      { label: 'SELL', clase: 'ri-sell', idx: 2 },
+    ];
+    resumen.innerHTML = clases.map(c => {
+      const totalFila = matrizDatos[c.idx].reduce((a, b) => a + b, 0);
+      const recall = ((matrizDatos[c.idx][c.idx] / totalFila) * 100).toFixed(1);
+      return `<div class="resumen-item ${c.clase}"><span class="ri-val">${recall}%</span>Recall ${c.label}</div>`;
+    }).join('');
+  }
+
+  /* =============================================
+     DISTRIBUCIÓN DE PREDICCIONES
+  ============================================= */
+  function renderizarDistribucion(clases) {
+    const total = clases[0] + clases[1] + clases[2];
+    const config = [
+      { label: 'BUY',  color: '#22c55e', n: clases[0] },
+      { label: 'HOLD', color: '#94a3b8', n: clases[1] },
+      { label: 'SELL', color: '#f43f5e', n: clases[2] },
+    ];
+    const wrap = document.getElementById('distrib-wrap');
+    wrap.innerHTML = config.map(c => {
+      const pct = total > 0 ? ((c.n / total) * 100).toFixed(1) : '0.0';
+      return `<div class="distrib-fila">
+        <span class="distrib-etiqueta" style="color:${c.color}; font-weight:700;">${c.label}</span>
+        <div class="distrib-bar-cont"><div class="distrib-bar-fill" style="width:${pct}%; background:${c.color};">${pct}%</div></div>
+        <span class="distrib-num">${c.n}</span>
+      </div>`;
+    }).join('');
+  }
+
+  /* =============================================
+     GRÁFICO DE BARRAS — F1-Score por clase
+  ============================================= */
+  function renderizarBarraF1(matrizDatos) {
+    const canvas = document.getElementById('graficoBarra');
+    const ctx    = canvas.getContext('2d');
+    const etiquetas = ['BUY', 'HOLD', 'SELL'];
+    const f1Clases  = matrizDatos.map((fila, i) => {
+      const tp = fila[i];
+      const fp = matrizDatos.reduce((s, f, fi) => fi !== i ? s + f[i] : s, 0);
+      const fn = fila.reduce((s, v, ci) => ci !== i ? s + v : s, 0);
+      const precision = tp / (tp + fp);
+      const recall    = tp / (tp + fn);
+      const f1 = (2 * precision * recall) / (precision + recall);
+      return parseFloat(((f1 || 0) * 100).toFixed(1));
+    });
+
+    if (instBarra) { instBarra.destroy(); instBarra = null; }
+
+    instBarra = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: etiquetas, datasets: [{ label: 'F1-Score (%)', data: f1Clases, backgroundColor: ['#22c55e', '#94a3b8', '#f43f5e'], borderRadius: 6, borderSkipped: false }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: (item) => ` F1-Score: ${item.raw.toFixed(1)}%` },
+            backgroundColor: 'rgba(19,25,51,0.95)', titleColor: '#fff', bodyColor: '#cfd3ec',
+            borderColor: '#232a4d', borderWidth: 1,
+          },
+        },
+        scales: {
+          x: { ticks: { font: { size: 12, weight: '600' }, color: '#e7e9f5' }, grid: { display: false } },
+          y: { min: 0, max: 100, ticks: { font: { size: 11 }, color: '#8b93b8', callback: (v) => `${v}%` }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        },
+      },
+    });
+  }
+
+  /* =============================================
+     FUNCIÓN PRINCIPAL: cargar ticker desde la API
+  ============================================= */
+  async function cargarTicker(ticker) {
+    ocultarError();
+    setCargando(true);
+    setEstadoConexion('cargando', 'Consultando API…');
+
+    try {
+      const datos = await obtenerDatosSVC(ticker);
+
+      document.getElementById('legend-ticker').textContent = ticker;
+      renderizarParamsModelo(datos.modelo || {}, ticker);
+      renderizarSemaforo(datos.senal_actual, datos.confianza, (datos.modelo && datos.modelo.ventana) || 60);
+      renderizarMetricas(datos.metricas);
+      renderizarGraficoPrecio(datos, ticker);
+      renderizarMatriz(datos.matriz_confusion);
+      renderizarDistribucion(datos.clases);
+      renderizarBarraF1(datos.matriz_confusion);
+
+      setEstadoConexion('ok', 'Conectado');
+    } catch (err) {
+      console.error(err);
+      mostrarError(err.message || 'No fue posible obtener los datos del backend.');
+      setEstadoConexion('error', 'Error de conexión');
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  /* =============================================
+     INICIALIZACIÓN al cargar la página
+  ============================================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    const guardado = localStorage.getItem(LS_KEY_API);
+    if (guardado) document.getElementById('api-base').value = guardado;
+    cargarTicker('AAPL');
+  });
+</script>
+
+<script>
+/* =====================================================================
+   InvestAI · API CLIENT v2 (compartido por los 11 módulos)
+   - Lee la URL de ngrok desde localStorage('INVESTAI_API_URL')
+   - Añade automáticamente el header 'ngrok-skip-browser-warning'
+     para evitar la página de intercepción de ngrok gratis
+===================================================================== */
+const _IV_KEY = 'INVESTAI_API_URL';
+
+function ivApiBase() {
+  return (localStorage.getItem(_IV_KEY) || '').replace(/\/+$/, '');
+}
+function ivApiSave(url) {
+  localStorage.setItem(_IV_KEY, (url || '').trim().replace(/\/+$/, ''));
+}
+
+// Headers que van en TODOS los fetch() hacia el backend
+const _IV_HEADERS = {
+  'Accept': 'application/json',
+  'ngrok-skip-browser-warning': 'true',   // ← evita la página de advertencia de ngrok
+  'Content-Type': 'application/json',
+};
+
+async function ivApiFetch(path, opts = {}) {
+  const base = ivApiBase();
+  if (!base) throw new Error('API_NOT_CONFIGURED');
+  const url = base + path;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { ..._IV_HEADERS, ...opts.headers },
+    signal: AbortSignal.timeout(opts.timeout || 30000),
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+/* ── Modal de configuración de URL del backend ─────────────────────── */
+function ivShowApiModal(onSave) {
+  if (document.getElementById('iv-api-modal')) return;
+  const saved = ivApiBase();
+  const modal = document.createElement('div');
+  modal.id = 'iv-api-modal';
+  modal.innerHTML = `
+    <div class="iv-modal-bg" onclick="ivCloseApiModal()"></div>
+    <div class="iv-modal-box">
+      <div class="iv-modal-icon">🔗</div>
+      <div class="iv-modal-title">Conectar con el Backend InvestAI</div>
+      <p class="iv-modal-desc">
+        Copia la URL pública que muestra el Colab al iniciar ngrok:<br>
+        <code style="font-size:.75rem;color:#1fe0c4;">🌐 API pública disponible en: https://xxxx.ngrok-free.app</code>
+      </p>
+      <input id="iv-api-input" class="iv-modal-input" type="url"
+        placeholder="https://xxxx.ngrok-free.dev"
+        value="${saved}" autocomplete="off" spellcheck="false">
+      <p class="iv-modal-hint" id="iv-modal-hint" style="display:none"></p>
+      <div class="iv-modal-actions">
+        <button class="iv-btn-secondary" onclick="ivCloseApiModal()">Cancelar</button>
+        <button class="iv-btn-primary" onclick="ivSaveApiModal()">Guardar y Reconectar</button>
+      </div>
+      <p class="iv-modal-footer">
+        Verifica con:&nbsp;<code>/api/salud</code> &nbsp;·&nbsp;
+        <a href="https://dashboard.ngrok.com" target="_blank" rel="noopener">Panel ngrok</a>
+        &nbsp;·&nbsp;
+        <a href="#" onclick="window.open(ivApiBase()+'/docs','_blank')">Swagger UI</a>
+      </p>
+    </div>`;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #iv-api-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;}
+    .iv-modal-bg{position:absolute;inset:0;background:rgba(5,7,14,.75);backdrop-filter:blur(4px);}
+    .iv-modal-box{position:relative;background:#141a28;border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:32px 28px 24px;width:min(500px,94vw);box-shadow:0 24px 80px rgba(0,0,0,.7);}
+    .iv-modal-icon{font-size:2rem;margin-bottom:10px;}
+    .iv-modal-title{font-family:'Sora',system-ui,sans-serif;font-size:1.15rem;font-weight:700;color:#eef1f8;margin-bottom:8px;}
+    .iv-modal-desc{font-size:.84rem;color:#a8b1c7;line-height:1.6;margin:0 0 16px;}
+    .iv-modal-hint{font-size:.78rem;margin:6px 0 0;}
+    .iv-modal-hint.ok{color:#1fe0c4;}
+    .iv-modal-hint.err{color:#f87171;}
+    .iv-modal-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#0c0f18;color:#eef1f8;font-family:'IBM Plex Mono',monospace;font-size:.82rem;outline:none;box-sizing:border-box;}
+    .iv-modal-input:focus{border-color:#7c5cff;box-shadow:0 0 0 3px rgba(124,92,255,.2);}
+    .iv-modal-actions{display:flex;gap:10px;margin-top:16px;}
+    .iv-btn-primary{flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#1fe0c4,#7c5cff);color:#0b0d14;font-weight:700;font-size:.88rem;cursor:pointer;transition:opacity .15s;}
+    .iv-btn-primary:hover{opacity:.85;}
+    .iv-btn-secondary{padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:#a8b1c7;font-size:.88rem;cursor:pointer;}
+    .iv-modal-footer{font-size:.72rem;color:#6c7690;margin:14px 0 0;text-align:center;}
+    .iv-modal-footer a{color:#7c5cff;text-decoration:none;}
+    .iv-toast{position:fixed;bottom:24px;right:24px;background:#141a28;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 18px;font-size:.82rem;color:#eef1f8;z-index:10000;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;}
+    .iv-toast.ok{border-color:rgba(31,224,196,.3);}
+    .iv-toast.err{border-color:rgba(248,113,113,.3);}
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(modal);
+  document.getElementById('iv-api-input').focus();
+  window._ivApiOnSave = onSave;
+}
+
+function ivCloseApiModal() {
+  const m = document.getElementById('iv-api-modal');
+  if (m) m.remove();
+}
+
+async function ivSaveApiModal() {
+  const inp = document.getElementById('iv-api-input');
+  const hint = document.getElementById('iv-modal-hint');
+  const url = (inp.value || '').trim().replace(/\/+$/, '');
+  if (!url) { hint.textContent = 'Por favor ingresa la URL.'; hint.className = 'iv-modal-hint err'; hint.style.display='block'; return; }
+  inp.disabled = true;
+  hint.textContent = 'Verificando conexión con /api/salud…';
+  hint.className = 'iv-modal-hint'; hint.style.display='block';
+  try {
+    const res = await fetch(url + '/api/salud', {
+      signal: AbortSignal.timeout(10000),
+      headers: _IV_HEADERS,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    ivApiSave(url);
+    hint.textContent = `✓ Conectado · ${data.servicio || 'InvestAI API'} ${data.version ? 'v'+data.version : ''}`;
+    hint.className = 'iv-modal-hint ok';
+    setTimeout(() => {
+      ivCloseApiModal();
+      ivToast('✅ Backend conectado correctamente', 'ok');
+      if (typeof window._ivApiOnSave === 'function') window._ivApiOnSave(url);
+    }, 900);
+  } catch (e) {
+    hint.textContent = `✗ Error: ${e.message}. Verifica que la URL es correcta y el Colab está corriendo.`;
+    hint.className = 'iv-modal-hint err';
+    inp.disabled = false;
+  }
+}
+
+function ivToast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = `iv-toast ${type}`;
+  t.innerHTML = `<span>${type==='ok'?'✅':'⚠️'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+async function ivCheckHealth(onSuccess, onFail) {
+  const base = ivApiBase();
+  if (!base) { if (onFail) onFail('API_NOT_CONFIGURED'); return; }
+  try {
+    const res = await fetch(base + '/api/salud', {
+      signal: AbortSignal.timeout(7000),
+      headers: _IV_HEADERS,
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (onSuccess) onSuccess(data);
+  } catch (e) {
+    if (onFail) onFail(e.message || 'UNKNOWN');
+  }
+}
+
+
+
+
+function ivActualizarDot(ok){const d=document.getElementById('iv-api-status-dot');if(d)d.style.background=ok?'#1fe0c4':'#f87171';}
+function ivNavToggle(abrir){
+  document.getElementById('ivnav').classList.toggle('abierto', abrir);
+  document.getElementById('ivnavOverlay').classList.toggle('activo', abrir);
+}
+</script>
+
+<script>setTimeout(()=>{ivCheckHealth(()=>ivActualizarDot(true),(e)=>{ivActualizarDot(false);if(e==="API_NOT_CONFIGURED")ivToast("Backend no configurado — pulsa 🔗 para conectar","err");});},500);</script>
+</body>
+</html>
