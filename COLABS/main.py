@@ -1105,9 +1105,9 @@ def api_nlp(ticker: str = Path(..., description="Símbolo bursátil, ej. 'BVN'. 
     existe en los datos pre-calculados se devuelve 404. Usar 'ALL' para obtener
     noticias de todos los tickers disponibles."""
 
-    # Ruta al JSON generado por el Notebook 5 — relativa a este archivo
-    _NLP_JSON = os.path.join(os.path.dirname(__file__),
-                             "..", "COLABS",
+    # Ruta al JSON generado por el Notebook 5
+    # main.py vive en COLABS/, el JSON está en COLABS/5.xxx/datos_nlp.json
+    _NLP_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "5.Análisis de Sentimiento NLP con VADER",
                              "datos_nlp.json")
 
@@ -1181,6 +1181,114 @@ def api_nlp(ticker: str = Path(..., description="Símbolo bursátil, ej. 'BVN'. 
         "resumen": resumen.get(ticker_up, {}),
         "metadata": datos.get("metadata", {}),
     }
+
+
+# ════════════════════════════════════════════════════════════════════════
+# ENDPOINTS JSON PRE-CALCULADOS — Sirven los resultados exportados por
+# cada Notebook sin necesidad de re-entrenar modelos.
+# Rutas de los JSON (relativas a main.py en COLABS/):
+#   datos_mercado.json → 1.-IngestaDatosYfinance/datos_mercado.json
+#   datos_svc.json     → 2.Clasificador SVC/datos_svc.json
+#   datos_rnns.json    → 3.Clasificadores RNN/datos_rnns.json
+#   datos_lstm_reg.json→ 4.Regresor LSTM/datos_lstm_reg.json
+# ════════════════════════════════════════════════════════════════════════
+
+_BASE = os.path.dirname(os.path.abspath(__file__))
+
+def _load_json(rel_path: str) -> Any:
+    """Carga un JSON relativo al directorio de main.py (COLABS/)."""
+    full = os.path.join(_BASE, rel_path)
+    try:
+        with open(full, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        raise HTTPException(status_code=503,
+            detail=f"JSON no encontrado: {rel_path}. Ejecuta primero el notebook correspondiente.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error leyendo {rel_path}: {exc}")
+
+
+@app.get("/api/json/mercado", tags=["JSON Pre-calculados"],
+         summary="Todos los activos — datos de mercado del Notebook 1")
+def api_json_mercado():
+    """Devuelve el JSON completo exportado por el Notebook 1 (mercado + indicadores técnicos)."""
+    return _load_json("1.-IngestaDatosYfinance/datos_mercado.json")
+
+
+@app.get("/api/json/mercado/{ticker}", tags=["JSON Pre-calculados"],
+         summary="Un activo — datos de mercado del Notebook 1")
+def api_json_mercado_ticker(ticker: str = Path(..., description="Símbolo, ej. 'BVN'")):
+    """Devuelve los datos de mercado pre-calculados para un ticker específico."""
+    data = _load_json("1.-IngestaDatosYfinance/datos_mercado.json")
+    activos = data.get("activos", {})
+    ticker_up = ticker.strip().upper()
+    if ticker_up not in activos:
+        raise HTTPException(status_code=404,
+            detail=f"Ticker '{ticker_up}' no disponible. Tickers en el JSON: {list(activos.keys())}")
+    return activos[ticker_up]
+
+
+@app.get("/api/json/svc", tags=["JSON Pre-calculados"],
+         summary="Todos los activos — clasificador SVC del Notebook 2")
+def api_json_svc():
+    """Devuelve el JSON completo exportado por el Notebook 2 (SVC)."""
+    return _load_json("2.Clasificador SVC/datos_svc.json")
+
+
+@app.get("/api/json/svc/{ticker}", tags=["JSON Pre-calculados"],
+         summary="Un activo — clasificador SVC del Notebook 2")
+def api_json_svc_ticker(ticker: str = Path(..., description="Símbolo, ej. 'BVN'")):
+    data = _load_json("2.Clasificador SVC/datos_svc.json")
+    tickers = data.get("tickers", {})
+    ticker_up = ticker.strip().upper()
+    if ticker_up not in tickers:
+        raise HTTPException(status_code=404,
+            detail=f"Ticker '{ticker_up}' no disponible. Tickers en el JSON: {list(tickers.keys())}")
+    return tickers[ticker_up]
+
+
+@app.get("/api/json/rnns", tags=["JSON Pre-calculados"],
+         summary="Todos los activos — clasificadores RNN del Notebook 3")
+def api_json_rnns():
+    """Devuelve el JSON completo exportado por el Notebook 3 (RNNs)."""
+    return _load_json("3.Clasificadores RNN/datos_rnns.json")
+
+
+@app.get("/api/json/rnns/{ticker}", tags=["JSON Pre-calculados"],
+         summary="Un activo — clasificadores RNN del Notebook 3")
+def api_json_rnns_ticker(ticker: str = Path(..., description="Símbolo, ej. 'BVN'")):
+    data = _load_json("3.Clasificadores RNN/datos_rnns.json")
+    ticker_up = ticker.strip().upper()
+    if ticker_up not in data:
+        raise HTTPException(status_code=404,
+            detail=f"Ticker '{ticker_up}' no disponible. Tickers en el JSON: {list(data.keys())}")
+    return data[ticker_up]
+
+
+@app.get("/api/json/lstm", tags=["JSON Pre-calculados"],
+         summary="Todos los activos — regresor LSTM del Notebook 4")
+def api_json_lstm():
+    """Devuelve el JSON completo exportado por el Notebook 4 (LSTM regresor)."""
+    return _load_json("4.Regresor LSTM/datos_lstm_reg.json")
+
+
+@app.get("/api/json/lstm/{ticker}", tags=["JSON Pre-calculados"],
+         summary="Un activo — regresor LSTM del Notebook 4")
+def api_json_lstm_ticker(ticker: str = Path(..., description="Símbolo, ej. 'BVN'")):
+    data = _load_json("4.Regresor LSTM/datos_lstm_reg.json")
+    resultados = data.get("resultados", {})
+    ticker_up = ticker.strip().upper()
+    if ticker_up not in resultados:
+        raise HTTPException(status_code=404,
+            detail=f"Ticker '{ticker_up}' no disponible. Tickers en el JSON: {list(resultados.keys())}")
+    return resultados[ticker_up]
+
+
+@app.get("/api/json/nlp", tags=["JSON Pre-calculados"],
+         summary="Todos los activos — análisis NLP del Notebook 5")
+def api_json_nlp():
+    """Devuelve el JSON completo exportado por el Notebook 5 (NLP/VADER)."""
+    return _load_json("5.Análisis de Sentimiento NLP con VADER/datos_nlp.json")
 
 
 @app.get("/", tags=["Salud"], include_in_schema=False)
